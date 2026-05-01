@@ -1,0 +1,3542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Stack — Master Any Topic With AI</title>
+<meta name="description" content="A precision interrogation protocol for using AI to deeply learn any topic. Free, open, runs in your browser.">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     THEMES — dark default, light optional
+     ============================================================ */
+  :root, [data-theme="dark"] {
+    --bg: #0d0d11;
+    --surface: #15151c;
+    --surface2: #1d1d27;
+    --surface3: #252533;
+    --border: #2c2c3a;
+    --border-bright: #3a3a4d;
+    --accent: #ff7a45;
+    --accent-dim: #8a3f20;
+    --gold: #d4b558;
+    --green: #5fc88a;
+    --blue: #5b9eff;
+    --purple: #a888ff;
+    --text: #ebe8e0;
+    --muted: #7a7790;
+    --muted-bright: #a09da8;
+    --code-bg: #08080c;
+    --code-text: #c5c2d8;
+    --shadow: rgba(0,0,0,0.5);
+  }
+
+  [data-theme="light"] {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface2: #f3f1ec;
+    --surface3: #e8e5dd;
+    --border: #d8d4c8;
+    --border-bright: #b8b3a4;
+    --accent: #c2410c;
+    --accent-dim: #fed7aa;
+    --gold: #92660a;
+    --green: #15803d;
+    --blue: #1d4ed8;
+    --purple: #6d28d9;
+    --text: #1a1a1f;
+    --muted: #6b6856;
+    --muted-bright: #44423a;
+    --code-bg: #f5f3ec;
+    --code-text: #2a2820;
+    --shadow: rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    /* Slightly larger base for accessibility — 17px ≈ users can comfortably read */
+    font-size: 17px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    line-height: 1.65;
+    min-height: 100vh;
+    padding-bottom: 80px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,122,69,0.05), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(168,136,255,0.04), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  [data-theme="light"] body::before {
+    background:
+      radial-gradient(ellipse at top left, rgba(194,65,12,0.04), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(109,40,217,0.03), transparent 50%);
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+  [data-theme="light"] body::after { opacity: 0.5; }
+
+  /* Accessibility — focus indicators */
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Skip link for screen readers */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 8px;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 2px;
+    z-index: 200;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .skip-link:focus { top: 8px; }
+
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 56px 24px 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* THEME TOGGLE */
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .icon-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted-bright);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .icon-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* HEADER */
+  .header { margin-bottom: 36px; }
+  .header .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header .eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.6rem, 6vw, 4.5rem);
+    font-weight: 900;
+    line-height: 0.95;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .header h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .header .subtitle {
+    margin-top: 18px;
+    color: var(--muted-bright);
+    font-size: 1.05rem;
+    max-width: 640px;
+    line-height: 1.7;
+  }
+  .header .subtitle strong { color: var(--text); font-weight: 500; }
+
+  /* INTRO STEPS */
+  .intro-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 22px 26px;
+    margin-bottom: 28px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 700px) {
+    .intro-card { grid-template-columns: 1fr; gap: 16px; }
+  }
+  .intro-step { display: flex; flex-direction: column; gap: 4px; }
+  .intro-step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+  }
+  .intro-step-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .intro-step-desc {
+    font-size: 0.88rem;
+    color: var(--muted-bright);
+    line-height: 1.55;
+  }
+
+  /* MVS BADGE */
+  .mvs-banner {
+    background: linear-gradient(90deg, rgba(95,200,138,0.08), rgba(91,158,255,0.04));
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 12px 18px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .mvs-text {
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .mvs-text strong { color: var(--green); }
+  .mvs-toggle {
+    background: var(--green);
+    color: var(--bg);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: opacity 0.15s;
+  }
+  [data-theme="light"] .mvs-toggle { color: #fff; }
+  .mvs-toggle:hover { opacity: 0.85; }
+  .mvs-toggle.active {
+    background: var(--surface3);
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
+
+  /* MODE PICKER + TIME TRACK */
+  .mode-row {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .mode-row-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .mode-row-help {
+    color: var(--muted);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    margin-left: 8px;
+  }
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  @media (max-width: 900px) { .mode-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 600px) { .mode-grid { grid-template-columns: repeat(2, 1fr); } }
+  .mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--muted-bright);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .mode-btn .mode-emoji { font-size: 1.4rem; line-height: 1; }
+  .mode-btn:hover {
+    border-color: var(--accent-dim);
+    color: var(--text);
+  }
+  .mode-btn.active {
+    background: var(--surface3);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .mode-btn[data-mode="explore"].active {
+    border-color: var(--purple);
+    color: var(--purple);
+    box-shadow: 0 0 0 1px var(--purple);
+  }
+
+  .track-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 800px) { .track-row { grid-template-columns: 1fr; } }
+  .track-col, .what48h-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .track-row-label, .what48h-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .what48h-col { border-color: var(--green); }
+  .what48h-label { color: var(--green); }
+  .what48h-text {
+    font-size: 0.86rem;
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .segmented.segmented-5 { grid-template-columns: repeat(5, 1fr); }
+  @media (max-width: 600px) {
+    .segmented.segmented-5 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* PRACTICE SCHEDULE PANEL (Block / Sustained tracks) */
+  .practice-panel {
+    background: linear-gradient(90deg, rgba(95,200,138,0.06), transparent);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 18px 0;
+  }
+  .practice-panel-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .practice-panel-text { font-size: 0.86rem; color: var(--text); line-height: 1.55; }
+
+  /* CONFIG PANEL */
+  .config-panel {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    margin-bottom: 36px;
+    position: sticky;
+    top: 12px;
+    z-index: 50;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 12px 40px var(--shadow);
+    overflow: hidden;
+  }
+  .config-panel.collapsed .config-body { display: none; }
+
+  .config-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    cursor: pointer;
+    background: linear-gradient(90deg, rgba(255,122,69,0.08), rgba(168,136,255,0.04));
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  [data-theme="light"] .config-bar {
+    background: linear-gradient(90deg, rgba(194,65,12,0.05), rgba(109,40,217,0.03));
+  }
+  .config-panel.collapsed .config-bar { border-bottom: none; }
+
+  .config-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .config-title .dot {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .config-summary { display: flex; gap: 6px; flex-wrap: wrap; }
+  .summary-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    background: var(--surface3);
+    padding: 4px 10px;
+    border-radius: 2px;
+    border: 1px solid var(--border-bright);
+    letter-spacing: 0.04em;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .summary-chip strong {
+    color: var(--accent);
+    margin-right: 4px;
+    font-weight: 600;
+  }
+
+  .config-toggle {
+    color: var(--muted);
+    transition: transform 0.3s;
+    font-size: 14px;
+    margin-left: auto;
+  }
+  .config-panel.collapsed .config-toggle { transform: rotate(180deg); }
+
+  .config-body { padding: 24px 22px; display: grid; gap: 22px; }
+
+  .config-row label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .config-row label .req { color: var(--accent); margin-left: 4px; }
+  .config-row label .help {
+    color: var(--muted);
+    text-transform: none;
+    font-size: 11px;
+    letter-spacing: normal;
+    margin-left: 8px;
+    font-style: italic;
+  }
+
+  .preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .preset-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    padding: 7px 14px;
+    background: var(--surface2);
+    color: var(--muted-bright);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .preset-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .preset-btn .icon { font-size: 0.95rem; opacity: 0.75; }
+
+  .input-text, .input-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .input-textarea {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    resize: vertical;
+    min-height: 64px;
+  }
+  .input-text:focus, .input-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .input-text::placeholder, .input-textarea::placeholder {
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 600px) {
+    .config-grid { grid-template-columns: 1fr; }
+  }
+
+  .segmented {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    background: var(--surface2);
+    padding: 4px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+  }
+  .seg-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 400;
+    padding: 8px 6px;
+    background: transparent;
+    color: var(--muted-bright);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .seg-btn:hover { color: var(--text); }
+  .seg-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .saved-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .saved-preset {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--surface3);
+    color: var(--text);
+    padding: 5px 8px 5px 12px;
+    border-radius: 2px;
+    border: 1px solid var(--border-bright);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .saved-preset:hover { border-color: var(--green); color: var(--green); }
+  .saved-preset .x {
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .saved-preset .x:hover { color: var(--accent); }
+
+  .action-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    color: var(--green);
+    border: 1px dashed var(--green);
+    padding: 5px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: all 0.15s;
+  }
+  .action-btn:hover { background: rgba(95,200,138,0.1); }
+  .action-btn.share { color: var(--blue); border-color: var(--blue); }
+  .action-btn.share:hover { background: rgba(91,158,255,0.1); }
+
+  /* SECTION LABELS */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin: 40px 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* PHASES */
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, opacity 0.3s;
+  }
+  .phase:hover { border-color: var(--border-bright); }
+  .phase.dimmed { opacity: 0.4; }
+  .phase.essential { position: relative; }
+  .phase.essential::before {
+    content: 'CORE';
+    position: absolute;
+    top: 16px;
+    right: 50px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    background: var(--green);
+    color: var(--bg);
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    z-index: 2;
+  }
+  [data-theme="light"] .phase.essential::before { color: #fff; }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 22px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface2);
+  }
+
+  .phase-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(255,122,69,0.08);
+    border: 1px solid var(--accent-dim);
+    padding: 4px 9px;
+    border-radius: 2px;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+  [data-theme="light"] .phase-num {
+    background: rgba(194,65,12,0.08);
+    border-color: rgba(194,65,12,0.4);
+  }
+
+  .phase-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .phase-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .phase-toggle {
+    color: var(--muted);
+    font-size: 14px;
+    transition: transform 0.3s;
+  }
+  .phase.open .phase-toggle { transform: rotate(180deg); }
+
+  .phase-body { display: none; padding: 22px; border-top: 1px solid var(--border); }
+  .phase.open .phase-body { display: block; }
+
+  .steps { list-style: none; }
+  .steps li {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .steps li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 32px;
+    padding-top: 2px;
+  }
+
+  .step-content { flex: 1; min-width: 0; }
+  .step-content h4 { font-size: 1rem; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .step-content p, .step-content > ul li {
+    font-size: 0.9rem;
+    color: var(--muted-bright);
+    line-height: 1.65;
+  }
+  .step-content > ul { list-style: none; margin-top: 6px; }
+  .step-content > ul li::before { content: '→ '; color: var(--accent-dim); }
+  [data-theme="light"] .step-content > ul li::before { color: var(--accent); }
+
+  /* PROMPT BOX */
+  .prompt-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(168,136,255,0.04);
+    border-bottom: 1px solid var(--border);
+  }
+  [data-theme="light"] .prompt-header { background: rgba(109,40,217,0.04); }
+
+  .prompt-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--purple);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .copy-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted-bright);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.06em;
+  }
+  .copy-btn:hover { color: var(--purple); border-color: var(--purple); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  .prompt-text {
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--code-text);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .ph {
+    color: var(--accent);
+    background: rgba(255,122,69,0.1);
+    padding: 1px 6px;
+    border-radius: 2px;
+    border: 1px dashed var(--accent-dim);
+    font-weight: 500;
+    transition: all 0.4s ease;
+  }
+  [data-theme="light"] .ph {
+    background: rgba(194,65,12,0.08);
+    border-color: rgba(194,65,12,0.5);
+  }
+  .ph.flash {
+    background: rgba(255,122,69,0.35);
+    border-color: var(--accent);
+  }
+  .ph-empty {
+    color: var(--muted);
+    background: transparent;
+    border-style: dotted;
+    font-style: italic;
+  }
+
+  /* CALLOUT */
+  .callout {
+    background: rgba(255,122,69,0.05);
+    border: 1px solid var(--accent-dim);
+    border-radius: 2px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  [data-theme="light"] .callout {
+    background: rgba(194,65,12,0.04);
+    border-color: rgba(194,65,12,0.3);
+  }
+  .callout strong { color: var(--accent); }
+
+  /* TAGS */
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin: 2px 2px 2px 0;
+    letter-spacing: 0.05em;
+  }
+  .tag-tool { background: rgba(91,158,255,0.1); color: var(--blue); border: 1px solid rgba(91,158,255,0.3); }
+  .tag-tip  { background: rgba(212,181,88,0.08); color: var(--gold); border: 1px solid rgba(212,181,88,0.3); }
+
+  /* UPLOAD CHECKLIST */
+  .upload-list {
+    background: var(--surface2);
+    border-radius: 2px;
+    padding: 14px 16px;
+    margin: 12px 0;
+  }
+  .upload-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.9rem;
+  }
+  .upload-list-item input[type="checkbox"] {
+    margin-top: 4px;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .upload-list-item label { cursor: pointer; line-height: 1.55; }
+  .upload-list-item input:checked + label {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  /* TAB SWITCHER */
+  .tab-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    background: var(--surface2);
+    padding: 4px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    width: fit-content;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 400;
+    padding: 6px 14px;
+    background: transparent;
+    color: var(--muted-bright);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    background: var(--purple);
+    color: #fff;
+    font-weight: 500;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* FAQ */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .faq-q {
+    padding: 14px 20px;
+    font-family: 'Fraunces', serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+  }
+  .faq-q::after {
+    content: '+';
+    color: var(--accent);
+    font-size: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .faq-item.open .faq-q::after { transform: rotate(45deg); }
+  .faq-a {
+    display: none;
+    padding: 0 20px 18px;
+    color: var(--muted-bright);
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+  .faq-item.open .faq-a { display: block; }
+  .faq-a strong { color: var(--text); }
+  .faq-a code {
+    background: var(--surface3);
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+  }
+
+  /* WALKTHROUGH EXAMPLE */
+  .walkthrough {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+  }
+  .walkthrough h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    color: var(--text);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .walkthrough .lede {
+    font-size: 0.9rem;
+    color: var(--muted-bright);
+    margin-bottom: 18px;
+  }
+  .walk-step {
+    border-left: 2px solid var(--border);
+    padding-left: 16px;
+    margin-bottom: 18px;
+  }
+  .walk-step:last-child { margin-bottom: 0; }
+  .walk-step.you { border-color: var(--blue); }
+  .walk-step.ai { border-color: var(--purple); }
+  .walk-step-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .walk-step.you .walk-step-label { color: var(--blue); }
+  .walk-step.ai .walk-step-label { color: var(--purple); }
+  .walk-step .content {
+    font-size: 0.92rem;
+    color: var(--text);
+    line-height: 1.65;
+  }
+  .walk-step .content em { color: var(--muted); font-style: italic; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* FOOTER */
+  .footer-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 50px;
+    letter-spacing: 0.06em;
+    line-height: 1.9;
+  }
+  .footer-note a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .footer-note a:hover { text-decoration: underline; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent);
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.3s ease;
+    z-index: 100;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .phase { animation: fadeUp 0.4s ease both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    html { font-size: 16px; }
+    .config-panel { position: relative; top: 0; }
+    .container { padding: 36px 14px 40px; }
+    .config-summary { display: none; }
+    .header h1 { font-size: 2.4rem; }
+    .phase.essential::before { right: 44px; top: 14px; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="container">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
+      <span id="themeIcon">☀</span> <span id="themeLabel">Light</span>
+    </button>
+    <a href="https://github.com/bluebud123" target="_blank" rel="noopener" class="icon-btn" aria-label="GitHub">
+      ⌨ GitHub
+    </a>
+  </div>
+
+  <main id="main">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="eyebrow">Universal Learning Protocol</div>
+    <h1>Context<br><em>Stack.</em></h1>
+    <p class="subtitle">A precision interrogation method for using AI to make the most compounding progress possible on any topic in the next 48 hours. <strong>Pick a Mode, configure once, every prompt adapts.</strong> Designed for serious learners across exam, skill, creative, project, dialogue, and diagnostic learning.</p>
+  </div>
+
+  <!-- INTRO STEPS -->
+  <div class="intro-card">
+    <div class="intro-step">
+      <div class="intro-step-num">01 — STACK</div>
+      <div class="intro-step-title">Curate your sources</div>
+      <div class="intro-step-desc">Upload focused materials to NotebookLM or Claude. Quality over volume.</div>
+    </div>
+    <div class="intro-step">
+      <div class="intro-step-num">02 — INTERROGATE</div>
+      <div class="intro-step-title">Run the prompts</div>
+      <div class="intro-step-desc">Prompts that surface frameworks, debates, traps, and depth questions.</div>
+    </div>
+    <div class="intro-step">
+      <div class="intro-step-num">03 — RECALL</div>
+      <div class="intro-step-title">Get examined, not taught</div>
+      <div class="intro-step-desc">AI switches to examiner mode. You answer first, then get graded.</div>
+    </div>
+  </div>
+
+  <!-- MODE PICKER -->
+  <div class="mode-row">
+    <div class="mode-row-label">Pick a Mode <span class="mode-row-help">— shape of your topic determines the protocol</span></div>
+    <div class="mode-grid" id="modeGrid"></div>
+  </div>
+
+  <!-- TIME TRACK + 48H CALLOUT -->
+  <div class="track-row">
+    <div class="track-col">
+      <div class="track-row-label">Time Track</div>
+      <div class="segmented segmented-5" id="trackSeg">
+        <button class="seg-btn" data-val="crash">Crash · 4–6h</button>
+        <button class="seg-btn" data-val="sprint">Sprint · 12h</button>
+        <button class="seg-btn active" data-val="standard">Standard · 48h</button>
+        <button class="seg-btn" data-val="block">Block · 2wk</button>
+        <button class="seg-btn" data-val="sustained">Sustained · 60d+</button>
+      </div>
+    </div>
+    <div class="what48h-col">
+      <div class="what48h-label">What 48h means in this Mode</div>
+      <div class="what48h-text" id="what48hText">Exam-ready or interview-grade declarative mastery. Matches what the MIT Challenge / cram literature actually proves.</div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIG PANEL ============ -->
+  <div class="config-panel" id="configPanel">
+    <div class="config-bar" onclick="toggleConfig(event)">
+      <div class="config-title">
+        <span class="dot"></span>
+        Configure Stack
+      </div>
+      <div class="config-summary" id="configSummary"></div>
+      <span class="config-toggle">▼</span>
+    </div>
+
+    <div class="config-body">
+
+      <!-- SAVED STACKS -->
+      <div class="config-row">
+        <label>Saved Stacks <span class="help">click to load · saved in your browser only</span></label>
+        <div class="saved-presets" id="savedPresets"></div>
+      </div>
+
+      <!-- QUICK PRESETS -->
+      <div class="config-row">
+        <label>Quick Start <span class="help">tap to load a template for this Mode, then customise</span></label>
+        <div class="preset-row" id="quickPresets"></div>
+      </div>
+
+      <!-- TOPIC -->
+      <div class="config-row">
+        <label>What are you learning?<span class="req">*</span> <span class="help">be specific</span></label>
+        <input type="text" class="input-text" id="topicInput" placeholder="e.g., Kubernetes operator pattern  ·  CFA Level 2 fixed income  ·  Roman Republic collapse">
+      </div>
+
+      <!-- ROLE + AUDIENCE -->
+      <div class="config-grid">
+        <div class="config-row">
+          <label>The AI plays the role of <span class="help">who teaches you</span></label>
+          <input type="text" class="input-text" id="roleInput" placeholder="e.g., staff engineer  ·  CFA charterholder  ·  history professor">
+        </div>
+        <div class="config-row">
+          <label>You're learning for <span class="help">your end goal</span></label>
+          <input type="text" class="input-text" id="audienceInput" placeholder="e.g., a job interview  ·  passing the exam  ·  writing a Substack post">
+        </div>
+      </div>
+
+      <!-- DEPTH + GOAL -->
+      <div class="config-grid">
+        <div class="config-row">
+          <label>Depth Level</label>
+          <div class="segmented" id="depthSeg">
+            <button class="seg-btn" data-val="beginner">Beginner</button>
+            <button class="seg-btn" data-val="intermediate">Intermediate</button>
+            <button class="seg-btn active" data-val="expert">Expert</button>
+            <button class="seg-btn" data-val="professional">Pro-Grade</button>
+          </div>
+        </div>
+        <div class="config-row">
+          <label>Primary Goal</label>
+          <div class="segmented" id="goalSeg">
+            <button class="seg-btn active" data-val="master">Master</button>
+            <button class="seg-btn" data-val="exam">Pass exam</button>
+            <button class="seg-btn" data-val="decide">Make decision</button>
+            <button class="seg-btn" data-val="present">Present/teach</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTEXT -->
+      <div class="config-row">
+        <label>Extra Context <span class="help">optional · your background, deadlines, specifics</span></label>
+        <textarea class="input-textarea" id="contextInput" placeholder="e.g., I have 5 years of Python experience  ·  I'm evaluating this for a 3-year hold  ·  Exam is in 6 weeks"></textarea>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="config-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="action-btn" onclick="saveCurrentStack()">+ Save Stack</button>
+        <button class="action-btn share" onclick="shareStack()">⎘ Share via URL</button>
+        <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">stays in your browser</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <div class="section-label">First Time? Read This</div>
+
+  <div id="faqList">
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What is "context stacking"?</div>
+      <div class="faq-a">
+        Loading a curated, dense body of knowledge into one AI conversation — your textbook chapter, key papers, your notes — and then <strong>interrogating the AI like an expert examiner</strong>, not asking it to summarise. The "stacking" is what you upload; the magic is in the prompts.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Why does this work better than just asking AI questions normally?</div>
+      <div class="faq-a">
+        Most people use AI as a glorified search engine — "explain X to me," "summarise this." That gets you fluency illusion: feeling like you understand because the answer made sense. This protocol is built on cognitive science: <strong>active recall</strong> (you answer before seeing the answer), <strong>desirable difficulty</strong> (the AI grades you, not coddles you), and <strong>generative learning</strong> (you build mental frameworks, not memorise facts).
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do I really need 48 hours?</div>
+      <div class="faq-a">
+        No. The "48 hours" is a frame that means <em>~48 hours of deliberate work</em>, spread however you want — across two weekends, four evenings, whatever. Use the <strong>MVS Mode</strong> button at the top to compress to ~4-6 hours of just the 3 essential prompts. The full protocol gives you depth; the short version gets you 70% of the value in 10% of the time.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Which AI tool should I use?</div>
+      <div class="faq-a">
+        <strong>NotebookLM</strong> for document-heavy stacks (it grounds answers in your sources and offers Audio Overview). <strong>Claude.ai</strong> for long-context reasoning — its 200k context window holds entire books. <strong>ChatGPT</strong> works too but is weaker on long documents. The protocol is tool-agnostic — copy the prompts to whichever you prefer.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do I need Deep Research mode?</div>
+      <div class="faq-a">
+        <strong>No — actively avoid it.</strong> Deep Research browses the web and adds noise. You already have curated material — that's the whole point. This protocol works because the AI is interrogating <em>your</em> stack, not the entire internet.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What does the "contrarian source" rule mean?</div>
+      <div class="faq-a">
+        Most people upload sources that agree with each other — five textbooks all teaching the same thing. Force yourself to include <strong>one source that disagrees</strong>: a critic, a competing framework, a paper with different conclusions. This is how you avoid building a stack that just confirms what you already believe. There's a dedicated prompt (Prompt G) that exploits this.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is my data sent anywhere?</div>
+      <div class="faq-a">
+        No. This page runs entirely in your browser. No accounts, no tracking, no server. Your saved stacks, topic, and context stay in <code>localStorage</code> on your device only. The <em>only</em> data that leaves your computer is what you copy and paste into your chosen AI tool — and that goes to <em>them</em>, not us.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Who built this?</div>
+      <div class="faq-a">
+        Built by <a href="https://github.com/bluebud123" target="_blank" rel="noopener" style="color:var(--accent);">bluebud123</a>. Free to use, free to fork. Feedback and PRs welcome on GitHub.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ WALKTHROUGH ============ -->
+  <div class="section-label">See It In Action</div>
+
+  <div class="walkthrough" id="walkthrough"></div>
+
+  <div style="text-align:center;margin:6px 0 24px;">
+    <button class="action-btn" id="walkthroughCycle" style="font-size:11px;">↻ See another domain example</button>
+  </div>
+
+  <!-- ============ PROTOCOL (rendered per Mode) ============ -->
+  <div class="section-label">The Protocol</div>
+
+  <div id="protocolContainer"></div>
+
+
+
+  <!-- ============ TRAPS ============ -->
+  <div class="section-label">What NOT To Do</div>
+
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <div class="phase-num">⚠ TRAPS</div>
+      <div class="phase-title">Common Failures of This Method</div>
+      <div class="phase-time">Read once</div>
+      <div class="phase-toggle">▼</div>
+    </div>
+    <div class="phase-body">
+      <ul class="steps">
+        <li>
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h4>Skipping "write your own answer first"</h4>
+            <p>Reading the AI's answer before formulating yours creates fluency illusion — feeling like you understand because the answer made sense. Real recall only forms when you struggle first.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h4>Dumping too many sources</h4>
+            <p>The temptation to upload everything dilutes AI focus. One primary, 2–3 supporting, 2–3 papers, your notes, one contrarian source. That's the optimal stack.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h4>Asking for summaries</h4>
+            <p>"Summarise this" is the lowest-value use of AI and what most people do. The point is to surface frameworks, debates, and traps — things sources don't teach explicitly.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h4>Trusting AI on context-specific practice</h4>
+            <p>The AI knows international literature well but not always: local exam style, your specific examiners, recent industry shifts, or your company's internal practices. Cross-check with humans who know the actual context.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">05</div>
+          <div class="step-content">
+            <h4>Doing 48 hours straight</h4>
+            <p>"48 hours" is a frame, not a marathon. Split as 8+10 hr days × 2, or 4 × 12-hour days. Sleep is when memory consolidates — skipping it negates the work.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">06</div>
+          <div class="step-content">
+            <h4>Confusing this with research</h4>
+            <p>This method is for <em>understanding what's already known</em>, not discovering new things. For genuine research where the answer doesn't exist yet, this won't help — that's a different mode.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">07</div>
+          <div class="step-content">
+            <h4>Forcing skill or creative learning into Examiner Mode</h4>
+            <p>PASS / BORDERLINE / FAIL is right for declarative knowledge under pressure. It's hostile to skill, creative, dialogue, and project learning. Pick the Mode that matches the *shape* of your topic — that's why Mode exists.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="footer-note">
+    CONTEXT STACK · UNIVERSAL LEARNING PROTOCOL<br>
+    100% LOCAL · NO ACCOUNTS · NO TRACKING · NO SERVER<br>
+    Built by <a href="https://github.com/bluebud123" target="_blank" rel="noopener">@bluebud123</a> · Free to use, free to fork
+  </div>
+
+  </main>
+
+</div>
+
+<div class="toast" id="toast">Copied with current settings</div>
+
+<script>
+  // ============================================================
+  // STATE & STORAGE
+  // ============================================================
+  const STORAGE_KEY = 'contextStackPublic_v3';
+  const LEGACY_STATE_KEY = 'contextStackPublic_v2';
+  const SAVED_KEY = 'contextStackPublic_saved_v3';
+  const LEGACY_SAVED_KEY = 'contextStackPublic_saved_v2';
+  const THEME_KEY = 'contextStackPublic_theme';
+  const LEGACY_MVS_KEY = 'contextStackPublic_mvs';
+
+  const state = {
+    mode: 'exam',
+    track: 'standard',
+    topic: '',
+    role: '',
+    audience: '',
+    depth: 'expert',
+    goal: 'master',
+    context: ''
+  };
+
+  // ============================================================
+  // TIME TRACKS
+  // ============================================================
+  const TRACKS = {
+    crash:     { label: 'Crash · 4–6h',    summary: '4–6 hours of focused work — essentials only' },
+    sprint:    { label: 'Sprint · 12h',    summary: '~12 hours, half a weekend' },
+    standard:  { label: 'Standard · 48h',  summary: '48 hours of deliberate work, the full protocol' },
+    block:     { label: 'Block · 2wk',     summary: '~30–40h spread across two weeks of evenings' },
+    sustained: { label: 'Sustained · 60d+', summary: '60+ days with weekly checkpoints — for skills, languages, deep domains' }
+  };
+
+  // ============================================================
+  // GLOBAL GOAL TEXT (used as fallback; modes can extend)
+  // ============================================================
+  const GLOBAL_GOAL_TEXT = {
+    master:   'genuinely mastering this topic for long-term use',
+    exam:     'passing a high-stakes examination',
+    decide:   'making a high-quality decision based on this knowledge',
+    present:  'teaching, presenting, or writing about this topic with authority',
+    build:    'shipping a real working artifact based on this knowledge',
+    perform:  'performing this skill in front of a real audience',
+    create:   'creating original work in this medium',
+    diagnose: 'making sound diagnostic / triage decisions in this field',
+    explore:  'figuring out what is worth committing 48 hours to'
+  };
+
+  // ============================================================
+  // MODES — the master switch for everything below
+  // ============================================================
+  // Each mode defines: label/emoji, default track, what 48h means,
+  // presets (with `id`, `icon`, `label` and field overrides),
+  // depth labels, allowed goal options, source checklist, walkthrough,
+  // phase list (with track gating), audio tabs, and prompt templates.
+  // ============================================================
+  const MODES = {
+
+  // ----------------------------------------------------------------
+  // EXAM — preserves the original protocol byte-for-byte
+  // ----------------------------------------------------------------
+  exam: {
+    label: 'Exam',
+    emoji: '🎓',
+    desc: 'Professional exams, interviews, declarative mastery',
+    defaultTrack: 'standard',
+    what48h: 'Exam-ready / interview-grade declarative mastery — what the MIT Challenge / cram literature actually proves.',
+    depthLabels: { beginner: 'Beginner', intermediate: 'Intermediate', expert: 'Expert', professional: 'Pro-Grade' },
+    goalOptions: [
+      { val: 'master',  label: 'Master' },
+      { val: 'exam',    label: 'Pass exam' },
+      { val: 'decide',  label: 'Make decision' },
+      { val: 'present', label: 'Present/teach' }
+    ],
+    presets: [
+      { id: 'exam',     icon: '📝', label: 'Professional Exam',  role: 'a senior examiner / professional in this field', audience: 'a high-stakes professional examination', depth: 'professional', goal: 'exam',    context: 'I need to pass a rigorous professional exam. Focus on examiner traps, common candidate mistakes, and the depth of understanding that separates pass from distinction.' },
+      { id: 'tech',     icon: '⚙',  label: 'Technical Skill',    role: 'a staff-level engineer with deep production experience', audience: 'building a real production system', depth: 'intermediate', goal: 'master', context: "I want to understand this well enough to use it in production, not just toy projects. Focus on real-world tradeoffs, common pitfalls, and the judgment calls that aren't in the documentation." },
+      { id: 'invest',   icon: '📈', label: 'Investment Analysis', role: 'a buy-side analyst at a top fund', audience: 'making a real investment decision', depth: 'expert', goal: 'decide', context: 'I need to understand this well enough to make a high-conviction decision. Focus on the moat, the bear case, the risks the consensus ignores, and the questions I should be able to answer before sizing a position.' },
+      { id: 'research', icon: '📚', label: 'Academic Research',  role: 'a senior researcher in this field', audience: 'producing publishable academic work', depth: 'professional', goal: 'present', context: 'I need to understand the current state of the literature, where the genuine controversies are, and how to position any contribution against existing work.' },
+      { id: 'industry', icon: '🏭', label: 'Industry Deep-Dive', role: 'an industry analyst at a top-tier consultancy', audience: 'a strategy memo or investment thesis', depth: 'expert', goal: 'decide', context: 'I need to understand structural dynamics, not just current news. Focus on competitive structure, capex cycles, customer concentration, and the dynamics that drive long-term outcomes.' },
+      { id: 'ideas',    icon: '💭', label: 'Big Ideas',          role: 'a leading thinker / professor in this domain', audience: 'genuinely understanding for life', depth: 'intermediate', goal: 'master', context: 'I want to understand this beyond surface popularization. Focus on what the actual canonical thinkers argue, where they disagree, and the strongest objections to each view.' },
+      { id: 'language', icon: '🌐', label: 'Language Theory',    role: 'a fluent native speaker who teaches advanced learners', audience: 'communicating naturally with native speakers', depth: 'intermediate', goal: 'master', context: 'I want to move beyond textbook knowledge. Focus on what natives actually say (vs. what textbooks teach), common errors at my level that signal "non-native", and the cultural context behind expressions.' },
+      { id: 'blank',    icon: '○',  label: 'Blank',              role: '', audience: '', depth: 'expert', goal: 'master', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: 'Primary reference', text: '— your main textbook, course material, or canonical document' },
+      { strong: '2–3 supporting sources', text: '— relevant chapters, blog posts, secondary references' },
+      { strong: '2–3 landmark or recent sources', text: '— research papers, industry reports, primary documents' },
+      { strong: 'Your own notes', text: '— handwritten (photographed) or typed, even rough' },
+      { strong: 'One contrarian source', text: '— a critic, a competing framework, or a paper that disagrees. <em>This is the secret weapon — Prompt G uses it.</em>' }
+    ],
+    walkthrough: {
+      title: 'Example: Learning Kubernetes Operators in 6 Hours',
+      lede: 'A realistic mini-walkthrough showing the first ~30 minutes of a Crash-track session. Topic: <strong>Kubernetes operator pattern</strong>. Goal: pass a senior SRE interview.',
+      steps: [
+        { kind: 'you', label: 'You upload to NotebookLM', html: 'Operator SDK docs (chapter 1-3), CoreOS original whitepaper (2016), one Kubebuilder tutorial, your own notes from a hackathon project, and one critical blog post titled "Operators Are Overkill." <em>Five sources, including one contrarian.</em>' },
+        { kind: 'you', label: 'You configure the stack', html: 'Topic: <strong>Kubernetes operator pattern</strong>  ·  Role: <strong>staff SRE who has shipped operators in production</strong>  ·  Audience: <strong>a senior SRE interview</strong>  ·  Depth: Expert  ·  Goal: Pass exam' },
+        { kind: 'you', label: 'You send the Opening Prompt', html: '<em>"You are a staff SRE... I\'m preparing for a senior SRE interview... Begin by telling me: what are the 5 core mental frameworks every competent staff SRE uses when approaching the Kubernetes operator pattern?"</em>' },
+        { kind: 'ai',  label: 'AI returns 5 frameworks', html: 'Reconciliation loops · Custom Resource Definitions as API · Level-triggered vs edge-triggered logic · Operator capability levels (1-5) · The "shouldn\'t this just be a controller?" test. <em>You write all 5 in your physical notebook — this is your scaffold.</em>' },
+        { kind: 'you', label: 'You send Prompt B (Common Mistakes)', html: '<em>"What are the 5 most common mistakes people at the Expert level make when working with Kubernetes operators?"</em>' },
+        { kind: 'ai',  label: 'AI surfaces the traps', html: '"Reconciling on every event instead of using level-triggered logic"  ·  "Putting business logic in webhooks"  ·  "Storing state outside the CRD spec/status"  ·  "Not handling finalizer cleanup"  ·  "Treating it like a deployment script". <em>You realize you\'d have made mistake #3 in your hackathon project.</em>' },
+        { kind: 'you', label: 'You switch to Examiner Mode', html: 'AI now asks <em>"Walk me through how you\'d design an operator that manages a stateful Postgres cluster across regions. Start with the CRD shape."</em> You answer in your notebook for 3 minutes. AI returns: <strong>BORDERLINE — your CRD design conflated spec and status, and you didn\'t address the regional consensus problem.</strong> AI then asks a harder follow-up.' },
+        { kind: 'you', label: 'After 6 hours total', html: 'You have a one-page Mastery Map, ~15 logged gap notes, and the experience of having defended your reasoning under pressure 12+ times. <em>You now actually understand operators — not just recognise them.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack Your Sources', time: '~1 hr setup', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Skip Deep Research mode.</strong> Deep Research browses the web and adds noise. The point of context stacking is the AI interrogating <em>your curated sources</em>, not the entire internet.',
+        tagsHtml: '<span class="tag tag-tool">NotebookLM</span> <span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tool">ChatGPT</span> <span class="tag tag-tip">Quality &gt; volume</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Context Load — The Opening', time: 'Hour 0–1', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: "Sets the AI's role, your level, and goal for the entire session.", prompt: { key: 'open', label: 'Opening Prompt' }, after: 'Write the 5 frameworks the AI returns in your physical notebook. They become your scaffold for every question this session.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'Deep Interrogation — 7 Core Prompts', time: 'Hour 1–20', tracks: ['sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Use sequentially. <strong style="color:var(--accent);">Rule:</strong> write your own answer first → send → compare → log gaps.',
+        steps: [
+          { num: 'A', title: 'Expert Disagreements', desc: 'Where do real practitioners actually disagree?', prompt: { key: 'a', label: 'Prompt A' }},
+          { num: 'B', title: 'Common Mistakes / Traps', desc: 'What do people at my level get wrong?', prompt: { key: 'b', label: 'Prompt B' }},
+          { num: 'C', title: 'Frameworks &amp; Models', desc: 'What are the structured ways experts think about this?', prompt: { key: 'c', label: 'Prompt C' }},
+          { num: 'D', title: 'The "So What" Test', desc: 'The questions that separate surface knowledge from understanding.', prompt: { key: 'd', label: 'Prompt D' }},
+          { num: 'E', title: 'Practitioner-Level Depth', desc: 'What separates someone who has done it from someone who has only read about it?', prompt: { key: 'e', label: 'Prompt E' }},
+          { num: 'F', title: 'Evidence &amp; Sources', desc: 'The canonical references and what they actually say.', prompt: { key: 'f', label: 'Prompt F' }},
+          { num: 'G', title: 'Steel-Man the Contrarian', desc: 'Use the disagreeing source you uploaded — extract its strongest argument.', prompt: { key: 'g', label: 'Prompt G' }}
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Stress Test — Active Recall', time: 'Hour 20–36', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'AI stops teaching, starts examining. Forces the active recall loop that makes this method actually work.',
+        steps: [
+          { num: '01', title: 'Switch to Examiner Mode', prompt: { key: 'exam', label: 'Examiner Mode' }},
+          { num: '02', title: 'The Active Recall Rule', bullets: ['Write your answer in your notebook first — minimum 2 minutes','Type your answer to the AI','Receive verdict (PASS / BORDERLINE / FAIL)','Note the gap in your Gap Log','Every 5 questions, send the correction prompt below'] },
+          { num: '03', title: 'Mid-session Correction', prompt: { key: 'corr', label: 'Correction · Every 5 Qs' }},
+          { num: '04', title: 'Stuck? Ask the AI what to ask next', desc: 'When you hit a wall mid-session, send this meta-prompt:', prompt: { key: 'stuck', label: 'Stuck Prompt' }},
+          { num: '05', title: 'High-Pressure Scenarios', prompt: { key: 'scen', label: 'Scenario Prompt' }}
+        ]},
+      { id: 'p4', num: 'PHASE 4', title: 'Consolidation — Lock It In', time: 'Hour 36–48', tracks: ['standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Generate Your Personal Cheat Sheet', prompt: { key: 'cons', label: 'Consolidation Prompt' }},
+          { num: '02', title: 'Capture the Gaps', bullets: ['Add new gaps back into your master notes','Tag FAIL or BORDERLINE answers — those go first next cycle','Mark this stack as done in the Saved Stacks panel above'] },
+          { num: '03', title: 'Spaced Repetition', bullets: ['Review the cheat sheet: Day 1 → Day 3 → Day 7 → Day 30','Each review: recall the 5 frameworks from memory first, then check','Run a 10-question mini-recall every 30 days'] }
+        ]},
+      { id: 'audio', num: 'BONUS', title: 'NotebookLM Audio Overview Prompts', time: 'Listen anywhere', tracks: ['standard','block','sustained'], type: 'audio',
+        intro: 'In NotebookLM, click <strong style="color:var(--text);">Audio Overview → Customize</strong> to use these. They turn your stack into a podcast you can listen to during commutes, gym, or while sleeping (passive consolidation).' }
+    ],
+    audioTabs: [
+      { id: 'audio-debate', label: 'Debate',        promptKey: 'audio_debate', promptLabel: 'Audio · Debate Format' },
+      { id: 'audio-recall', label: 'Active Recall', promptKey: 'audio_recall', promptLabel: 'Audio · Active Recall' },
+      { id: 'audio-traps',  label: 'Traps',         promptKey: 'audio_traps',  promptLabel: 'Audio · Traps' },
+      { id: 'audio-deep',   label: 'Deep Dive',     promptKey: 'audio_deep',   promptLabel: 'Audio · Deep Dive' }
+    ],
+    templates: {
+      open: `You are {{ROLE}}, helping me deeply learn the topic: {{TOPIC}}.
+
+I am preparing for: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded my study materials, references, and notes on this topic.
+
+Your job throughout this session is NOT to summarise the material. Your job is to:
+1. Identify the mental frameworks experts in this field use to reason through problems
+2. Surface the 3–5 areas where serious practitioners genuinely disagree
+3. Anticipate what would catch someone at my level off guard — the traps and depth questions
+4. Build my ability to think under pressure and apply the knowledge, not just recall facts
+
+Begin by telling me: what are the 5 core mental frameworks every competent {{ROLE_NOUN}} uses when approaching {{TOPIC}} — the kind of structured thinking that separates surface knowledge from genuine mastery?`,
+      a: `Show me the 3 areas in {{TOPIC}} where serious practitioners currently debate or genuinely disagree — not because evidence is weak, but because reasonable experts reach different conclusions.
+
+For each: state the debate, give the strongest argument from each side, and tell me which position is more defensible at the {{DEPTH}} level — and why. {{DEPTH_GUIDE}}`,
+      b: `What are the 5 most common mistakes people at the {{DEPTH}} level make when working with {{TOPIC}}?
+
+For each mistake: describe what they typically say or do, why it sounds plausible but is wrong or incomplete, and what the correct understanding should be. Frame this as what an experienced {{ROLE_NOUN}} would notice immediately. {{DEPTH_GUIDE}}`,
+      c: `For {{TOPIC}}, list the essential frameworks, models, classifications, or mental tools I must know.
+
+For each:
+- What it is and what it captures
+- Its key components or dimensions
+- Its practical utility — what decision or analysis does it drive?
+- Its limitations — where does it break down?
+- One concrete question or scenario where it's the right tool
+
+Prioritise by importance for someone working toward {{GOAL_TEXT}}. {{DEPTH_GUIDE}}`,
+      d: `For the 5 most important sub-topics within {{TOPIC}}, give me the "so what" test — the question that separates someone who memorised facts from someone who genuinely understands.
+
+For each sub-topic:
+1. The fact most people at my level know
+2. The deeper "so what" question that reveals true understanding
+3. The answer that demonstrates mastery
+
+Make the so-what questions sharp — the kind that exposes shallow knowledge immediately.`,
+      e: `For {{TOPIC}}, what separates someone who has actually done this in practice from someone who has only read about it?
+
+Give me:
+- 3 things only practitioners know (the "secret knowledge")
+- 3 common mistakes that signal someone is theory-only
+- 3 questions a senior {{ROLE_NOUN}} would ask to spot a fake
+- The judgment calls that aren't in any textbook
+
+Be specific. Use examples.`,
+      f: `What are the 5 most important sources, papers, books, or references I must know for {{TOPIC}}?
+
+For each:
+- Author / source / date
+- Key claim or finding
+- How it shaped current understanding
+- Its limitations or what's been challenged since
+- How to reference it intelligently in conversation
+
+Then: what is the one source most people overlook but that would impress a senior {{ROLE_NOUN}}?`,
+      g: `Among the sources I uploaded, identify the one that most strongly disagrees with or challenges the consensus view on {{TOPIC}}.
+
+Then:
+1. State its core argument in the strongest possible form (steel-man it)
+2. Identify which assumptions of the mainstream view it undermines
+3. Tell me what would have to be true for the contrarian to be right
+4. Tell me what evidence would actually settle the debate
+5. Give me your own honest assessment — is the contrarian view underrated, overrated, or correctly weighted?
+
+Don't strawman it. Treat it as if a smart, honest person was making the case.`,
+      exam: `Stop teaching mode. You are now a strict {{ROLE}} examining me on {{TOPIC}}. Your job is to test me, not help me.
+
+Rules:
+- Ask ONE question at a time, calibrated to {{DEPTH}} level
+- After I answer, do NOT immediately give the model answer — give a verdict (PASS / BORDERLINE / FAIL) with one line of reasoning
+- Then ask a follow-up question that probes my weakness or pushes me deeper
+- If I say "I don't know," push me to reason it through — don't rescue me
+- After 3 exchanges on a topic, give me the model answer
+- Be demanding. Vague answers don't earn credit.
+
+{{DEPTH_GUIDE}}
+
+Start with a question on the most important aspect of {{TOPIC}} for someone preparing for {{AUDIENCE}}.`,
+      corr: `Based on my last 5 answers, what is my single biggest gap or pattern of error in {{TOPIC}}?
+
+Give me:
+1. The pattern you noticed (what concept I keep missing or misapplying)
+2. The one-paragraph "core understanding" I need to lock in
+3. Two harder questions targeting this specific weakness`,
+      stuck: `I'm stuck. Based on our session so far on {{TOPIC}}, what should I be asking you next?
+
+Specifically:
+1. What concept have I been circling without truly grasping?
+2. What question, if I could answer it confidently, would unlock the next level of understanding?
+3. What aspect of this topic have we underexplored relative to its importance for {{GOAL_TEXT}}?
+
+Then ask me the most useful next question yourself.`,
+      scen: `Give me 3 realistic scenarios in {{TOPIC}} designed to separate competent from excellent — where there is no single right answer, but reasoning quality matters.
+
+For each:
+- Set the situation concretely (with specific details, numbers, context)
+- What someone shallow says
+- What a competent {{ROLE_NOUN}} says
+- What an excellent {{ROLE_NOUN}} says
+
+Then ask me Scenario 1 without showing the answers, and grade my response.`,
+      cons: `Based on this entire session, generate a one-page "Mastery Map" for {{TOPIC}}:
+
+1. The 5 core mental frameworks (from Phase 1)
+2. The 3 live debates and where I stand on each
+3. Top 5 frameworks/classifications + the one decision each one drives
+4. Top 5 "so what" depth questions with model answers
+5. The 3 things shallow learners say — and the better version
+6. The 3 most important sources in one sentence each
+7. My 3 weakest areas from this session (based on my answers)
+
+Format as plain text, printable as a single page reference card. No fluff, no padding.`,
+      audio_debate: `Generate an audio discussion in the format of a structured debate between two practitioners with opposing views on {{TOPIC}}.
+
+One host argues the dominant or consensus position; the other challenges it from the strongest possible counter-position. They should:
+- Cite specific evidence and details from the uploaded sources
+- Acknowledge the strongest points of the opposing view
+- Eventually identify where they actually agree and where the real uncertainty lies
+
+Avoid both hosts agreeing too quickly. Maintain genuine intellectual tension. The listener is at {{DEPTH}} level — don't oversimplify.`,
+      audio_recall: `Generate a discussion where two {{ROLE_NOUN}}s walk through key questions on {{TOPIC}} that someone preparing for {{AUDIENCE}} must be able to answer.
+
+For each question:
+1. State the question clearly
+2. Pause for 5 seconds (saying "take a moment to think")
+3. Discuss what a passable answer looks like
+4. Discuss what a strong answer looks like
+5. Highlight the trap most people fall into
+
+Cover 8-10 questions. Make me think before they answer. Calibrate difficulty to {{DEPTH}} level.`,
+      audio_traps: `Generate a discussion between two senior {{ROLE_NOUN}}s about the most common mistakes people at {{DEPTH}} level make when working with {{TOPIC}}.
+
+For each mistake, they should:
+- Describe what people typically say or do
+- Explain why it sounds plausible but is wrong
+- Walk through what the correct understanding looks like
+- Share a memorable example or anecdote
+
+The tone should be experienced practitioners sharing war stories, not a lecture. Cover 5-7 mistakes.`,
+      audio_deep: `Generate an in-depth discussion between two senior {{ROLE_NOUN}}s on {{TOPIC}}, calibrated for someone at {{DEPTH}} level working toward {{GOAL_TEXT}}.
+
+Do NOT summarise the uploaded material. Instead:
+- Discuss the underlying mental frameworks experts use
+- Walk through the key tradeoffs and when each consideration dominates
+- Reference specific landmark sources naturally as practitioners would
+- Cover the "judgment calls" that aren't in any textbook
+
+Use technical vocabulary appropriate to the field. Assume the listener already knows basics.`
+    }
+  },
+
+  // ----------------------------------------------------------------
+  // SKILL — motor / language / musical / artistic skills
+  // ----------------------------------------------------------------
+  skill: {
+    label: 'Skill',
+    emoji: '🎯',
+    desc: 'Languages, instruments, sport, drawing, motor skills',
+    defaultTrack: 'block',
+    what48h: 'First plateau — real conversation in French, playing a real song, recognisable form in a sketch. 40–50h of focused reps clears the "newcomer fog." Not fluency.',
+    depthLabels: { beginner: 'Newcomer', intermediate: 'Hobbyist', expert: 'Serious', professional: 'Performing' },
+    goalOptions: [
+      { val: 'master',  label: 'Master' },
+      { val: 'perform', label: 'Perform' },
+      { val: 'present', label: 'Present/teach' },
+      { val: 'exam',    label: 'Pass test' }
+    ],
+    presets: [
+      { id: 'french',   icon: '🗣',  label: 'Conversational language', role: 'a fluent native speaker who teaches advanced learners',          audience: 'holding real conversations with native speakers',     depth: 'intermediate', goal: 'perform', context: 'I want to move beyond textbook material into real conversational fluency. Focus on common errors at my level, what natives actually say (vs. textbooks), and a daily drill schedule.' },
+      { id: 'guitar',   icon: '🎸', label: 'Instrument',              role: 'a working session musician who teaches privately',                audience: 'playing one piece cleanly in front of others',        depth: 'beginner',     goal: 'perform', context: 'I want to play one real piece well, not noodle. Decompose into micro-drills, prescribe a daily practice schedule, and tell me where most learners plateau.' },
+      { id: 'draw',     icon: '✏',  label: 'Drawing / visual',        role: 'a working illustrator with classical training',                   audience: 'sketching life from observation',                     depth: 'beginner',     goal: 'master',  context: 'I want to draw recognisable forms from life. Focus on perceptual drills, common beginner errors, and a daily 30-minute practice routine.' },
+      { id: 'sport',    icon: '🎾', label: 'Sport / movement',        role: 'a coach who has trained the form at a high level',                audience: 'performing the movement reliably under pressure',     depth: 'beginner',     goal: 'perform', context: 'I want a deliberate-practice schedule that targets the biomechanical mistakes most beginners make. Focus on micro-drills, recovery, and how to self-diagnose when I plateau.' },
+      { id: 'speak',    icon: '🎤', label: 'Public speaking',         role: 'a senior speech coach who has trained TED speakers',              audience: 'delivering one talk that holds an audience',          depth: 'beginner',     goal: 'perform', context: 'I want to deliver one specific talk well. Decompose into vocal, structural, and presence drills, and prescribe a 2-week rehearsal schedule.' },
+      { id: 'blank',    icon: '○',  label: 'Blank',                   role: '', audience: '', depth: 'beginner', goal: 'perform', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: '1 master exemplar', text: '— recording, video, or work at the level you aspire to' },
+      { strong: '1 transcription / score / breakdown', text: '— of that exemplar, to study its moves' },
+      { strong: '1 teacher-explanation source', text: '— a method book, course, or instructional video' },
+      { strong: 'Your own attempts', text: '— recordings, photos, or written samples of your current level' },
+      { strong: '1 contrasting style', text: '— a different school of practice, to know what *not* to copy unconsciously' }
+    ],
+    walkthrough: {
+      title: 'Example: Conversational French to first plateau in 8 weeks',
+      lede: 'A Block-track session for an intermediate learner. Topic: <strong>Conversational French</strong>. Goal: hold a 30-minute café conversation with a native speaker.',
+      steps: [
+        { kind: 'you', label: 'You upload to Claude / NotebookLM', html: '5 InnerFrench podcast episodes (transcripts), the relevant chapter of <em>Practice Makes Perfect: Complete French Grammar</em>, your own 2-minute self-recording, an Easy French YouTube clip (transcribed), and one Québécois interview as the contrast source.' },
+        { kind: 'you', label: 'You configure the stack', html: 'Mode: <strong>Skill</strong>  ·  Track: <strong>Block · 2wk</strong>  ·  Topic: <strong>Conversational French (B1→B2)</strong>  ·  Role: <strong>fluent native speaker who teaches advanced learners</strong>  ·  Goal: Perform' },
+        { kind: 'you', label: 'You send the Opening Prompt', html: '<em>"You are a fluent native French speaker... I am at B1 working toward holding a 30-min café conversation. Begin by identifying the 3 micro-skills that will move me to B2 fastest."</em>' },
+        { kind: 'ai',  label: 'AI returns 3 micro-skills', html: 'Listening discrimination at native speed · spontaneous past-tense storytelling without tense flips · idiomatic "filler" phrases used by natives (<em>du coup, bref, en fait</em>). <em>Each gets a daily drill.</em>' },
+        { kind: 'you', label: 'You send Prompt S4 (Practice Schedule)', html: '<em>"Given Track=Block, generate a 14-day daily schedule using deliberate-practice principles."</em>' },
+        { kind: 'ai',  label: 'AI returns the schedule', html: '40-min daily blocks, alternating shadowing / spontaneous output / corrective listening, with weekly recordings, 2 recovery days. <em>You print it and stick it on your wall.</em>' },
+        { kind: 'you', label: 'You switch to Coach Mode', html: 'You record yourself answering an AI-given prompt for 90 seconds. AI returns: <strong>WORKING: tense agreement. NEEDS WORK: you used <em>j\'ai allé</em> twice — <em>aller</em> takes <em>être</em>. Repeat 3× now.</strong> No grade — just one correction at a time.' },
+        { kind: 'you', label: 'After 8 weeks (~40h)', html: 'You hold a real 30-minute café conversation with a French native, follow most of it, and recover from your errors mid-flow. <em>You have hit the first plateau. Not fluency — the door to it.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack Your Sources', time: '~1 hr setup', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Skip Deep Research mode.</strong> Skill learning needs ≤5 deep, repeatable sources, not a web crawl. Quality over quantity.',
+        tagsHtml: '<span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tool">NotebookLM</span> <span class="tag tag-tip">Record yourself</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Open the Coaching Session', time: 'Hour 0–1', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: 'Frames the AI as a coach for *your specific skill*, not a generic teacher.', prompt: { key: 'open', label: 'Opening Prompt' }, after: 'Write the 3 micro-skills the AI surfaces in your physical notebook. Those become your drill set for the entire block.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'Build the Reps Loop', time: 'Day 1–7', tracks: ['sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Use sequentially. Skill learning is reps + corrective feedback, not interrogation.',
+        steps: [
+          { num: 'S1', title: 'Models — the gold standard', desc: 'Find 3 exemplars at the level you want to reach.', prompt: { key: 's1', label: 'Prompt S1 · Models' }},
+          { num: 'S2', title: 'Decompose into micro-drills', desc: 'Break the next reachable skill into ≤7 ordered drills.', prompt: { key: 's2', label: 'Prompt S2 · Decomposition' }},
+          { num: 'S3', title: 'Self-feedback prompt', desc: 'Share a sample of your attempt; get the 3 highest-leverage corrections.', prompt: { key: 's3', label: 'Prompt S3 · Self-feedback' }},
+          { num: 'S5', title: 'Plateau diagnostic', desc: 'When you stall, run this to figure out whether it\'s technique, attention, fatigue, fear, or wrong-drill.', prompt: { key: 's5', label: 'Prompt S5 · Plateau' }}
+        ]},
+      { id: 'practice', num: 'PRACTICE', title: 'Daily Practice Schedule', time: 'Daily, throughout the block', tracks: ['block','sustained'], type: 'steps',
+        intro: 'Block and Sustained tracks add this dedicated schedule generator. Print it, stick it on the wall.',
+        steps: [
+          { num: 'S4', title: 'Generate the schedule', desc: 'Tell the AI your Track and constraints — get a deliberate-practice schedule with recovery days.', prompt: { key: 's4', label: 'Prompt S4 · Practice schedule' }, after: 'Re-run this prompt every 7 days with your latest plateau notes — the schedule should evolve, not stay fixed.' }
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Coach Mode — Corrective Reps', time: 'Daily during block', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'No grades. The coach watches one rep, corrects ONE thing, makes you repeat. That is the loop.',
+        steps: [
+          { num: '01', title: 'Switch to Coach Mode', prompt: { key: 'coach', label: 'Coach Mode' }},
+          { num: '02', title: 'The Reps Rule', bullets: ['Record or describe your attempt before reading any feedback','Receive ONE correction at a time — never a paragraph','Repeat the same drill until the correction lands','Mark the correction in your notebook with a tally — every 5 tallies graduates the drill','Every 5 days, re-run the Plateau diagnostic'] },
+          { num: '03', title: 'Mid-block correction', prompt: { key: 'corr', label: 'Pattern Correction · Every 5 days' }},
+          { num: '04', title: 'Stuck? Ask the coach what to drill next', prompt: { key: 'stuck', label: 'Stuck Prompt' }},
+          { num: '05', title: 'Pressure rehearsal', prompt: { key: 'scen', label: 'Pressure Rehearsal' }}
+        ]},
+      { id: 'p4', num: 'PHASE 4', title: 'Consolidation — Lock the Plateau', time: 'Final week', tracks: ['standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Generate your Skill Map', prompt: { key: 'cons', label: 'Skill-Map Prompt' }},
+          { num: '02', title: 'Capture the persistent gaps', bullets: ['Add unresolved corrections to your master drill log','Schedule a 7-day cool-down with one drill per day to lock the gains','Mark this stack as done in Saved Stacks once you can demo the skill cold'] },
+          { num: '03', title: 'Spaced practice', bullets: ['Re-run a short rep set: Day 1 → Day 3 → Day 7 → Day 30','Each session: do the demo cold *first*, then check the notes','Run a full 20-minute drill set every 30 days'] }
+        ]},
+      { id: 'audio', num: 'BONUS', title: 'NotebookLM Audio Coach Sessions', time: 'Listen anywhere', tracks: ['standard','block','sustained'], type: 'audio',
+        intro: 'Use NotebookLM <strong style="color:var(--text);">Audio Overview → Customize</strong> to turn your coaching stack into passive-listen audio for commutes and warm-ups.' }
+    ],
+    audioTabs: [
+      { id: 'audio-coach',  label: 'Coach session',  promptKey: 'audio_debate', promptLabel: 'Audio · Coach session' },
+      { id: 'audio-drill',  label: 'Drill set',      promptKey: 'audio_recall', promptLabel: 'Audio · Drill set' },
+      { id: 'audio-traps',  label: 'War stories',    promptKey: 'audio_traps',  promptLabel: 'Audio · War stories' },
+      { id: 'audio-deep',   label: 'Deep technique', promptKey: 'audio_deep',   promptLabel: 'Audio · Deep technique' }
+    ],
+    templates: {
+      open: `You are {{ROLE}}, coaching me on the skill: {{TOPIC}}.
+
+I am working toward: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded one master exemplar at the level I want to reach, a transcription/score/breakdown, a teacher-explanation source, my own attempts, and one contrasting style.
+
+Your job is NOT to summarise the material or test me on theory. Your job is to:
+1. Identify the 3 micro-skills that, drilled deliberately, will move me to the next level fastest
+2. Decompose each into ordered drills with clear failure modes
+3. Watch my reps and correct ONE thing at a time — never a paragraph of feedback
+4. Diagnose plateaus when they happen and prescribe the next drill, not the next theory
+
+Begin by telling me: what are the 3 micro-skills a {{ROLE_NOUN}} would prescribe for someone at my level working on {{TOPIC}}?`,
+      s1: `For {{TOPIC}}, identify 3 exemplars at the level I aspire to.
+
+For each exemplar:
+- Who or what it is
+- What specifically makes it excellent — at the technique level, not the impression level
+- The single *micro-skill* that distinguishes them from a competent practitioner
+- The drill I should run to internalise that micro-skill
+
+Calibrate to {{DEPTH}} level. {{DEPTH_GUIDE}}`,
+      s2: `Break the next reachable skill on my path in {{TOPIC}} into ≤7 ordered micro-drills.
+
+For each drill:
+- What it is, in one sentence
+- Success criterion — what success looks like, observable
+- Failure mode — the specific way most learners get this wrong
+- Reps target — how many before graduating to the next drill
+
+Order them so each builds on the previous. Calibrate to {{DEPTH}} level.`,
+      s3: `I am about to share a sample of my attempt at {{TOPIC}}. (I will paste a description, transcript, or recording note.)
+
+When I share it, give me the 3 highest-leverage corrections in order of impact. Rules:
+- No praise — just the list
+- One correction per item
+- Frame each as "do X instead of Y"
+- End with the single drill I should repeat 5 times right now
+
+{{DEPTH_GUIDE}}`,
+      s4: `Given the Time Track <strong>{{TRACK}}</strong>, generate a daily/weekly practice schedule for me on {{TOPIC}}.
+
+Use deliberate-practice principles:
+- Short focused blocks (20–45 min), one micro-drill at a time
+- One recovery day per week
+- A weekly review where I record myself and compare against my Day-1 baseline
+- Increasing difficulty inside each block, not across blocks
+
+Calibrate to {{DEPTH}} level and {{GOAL_TEXT}}. Format as a printable table.`,
+      s5: `I have stalled in {{TOPIC}}. Ask me 5 short questions to diagnose whether the plateau is:
+1. Technique (the wrong move)
+2. Attention (drilling on autopilot)
+3. Fatigue (need rest, not more reps)
+4. Fear (avoiding the part that scares me)
+5. Wrong drill (right idea, wrong exercise)
+
+After my answers, prescribe ONE concrete next drill — not a list — and a 3-day micro-plan to test whether the plateau breaks.`,
+      coach: `Stop teaching mode. You are now my coach for {{TOPIC}}, watching my reps. Your job is to correct, not grade.
+
+Rules:
+- I will share an attempt (description, recording note, or sample). React with ONE correction — the highest-leverage one — phrased as "do X instead of Y"
+- Then give me the next drill rep — short, specific, observable
+- No praise. No grades. No PASS/FAIL.
+- After 5 reps on the same drill, ask me one diagnostic question to decide whether to graduate the drill or repeat it
+- If I plateau, do NOT explain theory — prescribe a different drill that targets the same micro-skill from a new angle
+
+{{DEPTH_GUIDE}}
+
+Begin by asking me to demonstrate the most basic version of the next reachable skill in {{TOPIC}}.`,
+      corr: `Looking at my last 5 days of practice on {{TOPIC}}, what is the single recurring correction you keep needing to give me?
+
+Give me:
+1. The pattern (what micro-skill I keep getting wrong)
+2. The reason it keeps recurring (technique, attention, fatigue, fear, or wrong-drill)
+3. The new drill that targets the underlying cause, not the surface symptom`,
+      stuck: `I'm stuck on {{TOPIC}}. Based on our practice so far, what should I be drilling next?
+
+Specifically:
+1. Which micro-skill have I been avoiding without realising?
+2. What single drill, if I could nail it cold, would unlock the next level toward {{GOAL_TEXT}}?
+3. What aspect of this skill have we under-practiced relative to its importance?
+
+Then prescribe ONE drill — not a menu — and watch my next rep.`,
+      scen: `Give me 3 high-pressure rehearsal scenarios for {{TOPIC}} — situations that mimic the real pressure of {{AUDIENCE}}.
+
+For each:
+- Set the situation concretely (audience, time pressure, stakes)
+- The failure mode an under-rehearsed {{ROLE_NOUN}} shows
+- The recoverable error a competent {{ROLE_NOUN}} shows
+- The mark of an excellent {{ROLE_NOUN}} under that pressure
+
+Then put me in Scenario 1 — describe the situation, ask me to perform, and coach me through one rep.`,
+      cons: `Generate a one-page Skill Map for {{TOPIC}}:
+1. The 3 micro-skills I drilled and the drill that worked best for each
+2. Top 5 corrections I kept receiving — and the new default I have built
+3. The plateau I broke through, and the drill that broke it
+4. The single skill I am still avoiding (be honest)
+5. My 30-day maintenance plan: drill, frequency, success criterion
+
+Format as a printable single-page reference. No fluff.`,
+      audio_debate: `Generate an audio coaching session between two {{ROLE_NOUN}}s discussing the technique behind {{TOPIC}}, calibrated for someone at {{DEPTH}} level.
+
+They should:
+- Disagree about which micro-skill matters most at this level (use a real disagreement, not a manufactured one)
+- Cite specific moves, drills, or exemplars from the uploaded sources
+- Concede when the other is right about a specific point
+- End with one drill each listener should run today
+
+Tone: experienced practitioners, not lecturers. {{DEPTH_GUIDE}}`,
+      audio_recall: `Generate audio of two {{ROLE_NOUN}}s walking through a drill set for {{TOPIC}} that someone working toward {{AUDIENCE}} should run today.
+
+For each drill:
+1. State the drill clearly
+2. Pause 5 seconds (saying "do one rep now")
+3. Discuss the failure mode most learners hit on this drill
+4. Discuss what success looks like
+5. Move to the next drill
+
+Cover 6–8 drills. Calibrate to {{DEPTH}} level.`,
+      audio_traps: `Generate audio of two senior {{ROLE_NOUN}}s sharing war stories about plateaus in {{TOPIC}} at {{DEPTH}} level.
+
+For each plateau:
+- The symptom — what the learner felt or saw
+- Why drilling more of the same did not break it
+- The angle change that broke it
+- A short anecdote of someone who broke this exact plateau
+
+Tone: practitioners around a table, not a lecture. Cover 4–6 plateaus.`,
+      audio_deep: `Generate an in-depth audio discussion between two senior {{ROLE_NOUN}}s on the technique of {{TOPIC}}, calibrated for {{DEPTH}} level working toward {{GOAL_TEXT}}.
+
+Do NOT summarise the uploaded material. Instead:
+- Discuss the underlying biomechanics / linguistics / craft principles experts internalise
+- Walk through the judgment calls between competing techniques and when each dominates
+- Reference specific exemplars from the uploaded sources naturally as practitioners would
+- Cover the secret refinements that aren't in any method book
+
+Use technical vocabulary appropriate to the field.`
+    }
+  },
+
+  // ----------------------------------------------------------------
+  // CREATIVE — writing, design, composition, art-making
+  // ----------------------------------------------------------------
+  creative: {
+    label: 'Creative',
+    emoji: '🎨',
+    desc: 'Writing, design, composition, art-making',
+    defaultTrack: 'block',
+    what48h: 'First stylistic breakthrough — moves start showing up in your work that weren\'t there before. Not a developed voice, but the door to one.',
+    depthLabels: { beginner: 'Imitator', intermediate: 'Practitioner', expert: 'Stylist', professional: 'Voice' },
+    goalOptions: [
+      { val: 'create',  label: 'Create' },
+      { val: 'master',  label: 'Master' },
+      { val: 'present', label: 'Publish/show' },
+      { val: 'perform', label: 'Perform' }
+    ],
+    presets: [
+      { id: 'fiction',  icon: '📖', label: 'Short fiction',     role: 'a senior literary editor at a respected magazine',   audience: 'submitting to a literary magazine',         depth: 'intermediate', goal: 'create',  context: 'I want to write short fiction that holds up beside published work. Focus on craft moves, common middling-writer errors, and what editors actually look for.' },
+      { id: 'uxwrite',  icon: '✍',  label: 'UX writing',         role: 'a staff content designer at a top product company', audience: 'shipping copy in a real product',           depth: 'beginner',     goal: 'create',  context: 'I want to write product copy that reduces friction. Focus on voice consistency, common over-writing mistakes, and the calls that distinguish good copy from generic copy.' },
+      { id: 'song',     icon: '🎵', label: 'Songwriting',        role: 'a working songwriter who has charted',              audience: 'finishing one song that actually works',    depth: 'beginner',     goal: 'create',  context: 'I want to finish one song with a hook that lands. Focus on melodic decisions, lyric specificity, and the structural moves that make songs memorable.' },
+      { id: 'design',   icon: '◐',  label: 'Design portfolio',   role: 'a senior product designer who reviews portfolios',  audience: 'a portfolio review for a senior design role', depth: 'intermediate', goal: 'present', context: 'I want my portfolio to read as senior, not mid. Focus on the case-study moves that signal seniority, the common mid-level tells, and what reviewers grade on.' },
+      { id: 'blank',    icon: '○',  label: 'Blank',              role: '', audience: '', depth: 'intermediate', goal: 'create', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: '3 canonical exemplars', text: '— in the form, that you genuinely admire' },
+      { strong: '1 craft book', text: '— Saunders, Gardner, Prose, Le Guin, Sennett, etc.' },
+      { strong: '1 anti-model', text: '— a work in the genre that fails (you\'ll learn more from this than the canon)' },
+      { strong: 'Your own drafts', text: '— even rough, even unfinished' },
+      { strong: '1 exemplar from a different tradition', text: '— that bleeds into your form (fiction reading poetry, design reading architecture, etc.)' }
+    ],
+    walkthrough: {
+      title: 'Example: Short literary fiction breakthrough in 6 weeks',
+      lede: 'A Block-track session for an intermediate writer. Topic: <strong>Literary short fiction</strong>. Goal: write 3 stories good enough to submit.',
+      steps: [
+        { kind: 'you', label: 'You upload to Claude / NotebookLM', html: 'Three Saunders stories from <em>Tenth of December</em>, two Lispector pieces in translation, the relevant chapters of Saunders\' <em>A Swim in a Pond in the Rain</em>, two of your own first drafts, and a workshopped story that famously did not work as the anti-model.' },
+        { kind: 'you', label: 'You configure the stack', html: 'Mode: <strong>Creative</strong>  ·  Track: <strong>Block · 2wk</strong> (×3 cycles)  ·  Topic: <strong>Literary short fiction</strong>  ·  Role: <strong>senior literary editor at a respected magazine</strong>  ·  Goal: Create' },
+        { kind: 'you', label: 'You send the Opening Prompt', html: '<em>"You are a senior literary editor... I am working at the practitioner level toward submitting to a literary magazine. Map the canon I should study before drafting."</em>' },
+        { kind: 'ai',  label: 'AI returns the canon', html: '5 craft moves to steal: Saunders\' free-indirect bait-and-switch · Lispector\'s mid-paragraph point-of-view shift · the un-resolved ending · the deliberate misuse of cliché · the buried structural rhyme. <em>You write all 5 in your physical notebook.</em>' },
+        { kind: 'you', label: 'You send Prompt C2 (Imitation)', html: '<em>"Give me a structured imitation exercise for Saunders\' free-indirect technique."</em>' },
+        { kind: 'ai',  label: 'AI gives a tight brief', html: 'Pick one ordinary domestic scene. Use free-indirect from one character\'s perspective for 200 words, then slip without warning into another\'s. <em>Goal: internalise the move, not produce a finished piece.</em>' },
+        { kind: 'you', label: 'You switch to Studio Critique', html: 'You paste your draft. AI returns: <strong>WORKING: the slip mid-paragraph lands. PRETENDING: the second character sounds suspiciously like the first. CUT IT: the dream sequence.</strong> No grade — just three columns.' },
+        { kind: 'you', label: 'After 6 weeks (~30h)', html: 'You have three drafts where moves are showing up that weren\'t there before — and one finished story you would actually submit. <em>The voice is not yet yours. But the door is open.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack Your Sources', time: '~1 hr setup', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Skip Deep Research mode.</strong> Creative learning is imitation-then-divergence. Curate exemplars you can actually study, not a survey.',
+        tagsHtml: '<span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tool">NotebookLM</span> <span class="tag tag-tip">Anti-model is gold</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Open the Studio', time: 'Hour 0–1', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: 'Frames the AI as an editor / studio critic, not a teacher.', prompt: { key: 'open', label: 'Opening Prompt' }, after: 'Write the 5 canonical moves in your notebook. They become the moves you steal across this block.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'The Imitation / Critique Cycle', time: 'Cycles of 3–5 days', tracks: ['sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Use sequentially. Creative work compounds through imitation, structured critique, and voice extraction — not through more theory.',
+        steps: [
+          { num: 'C1', title: 'Map the canon', desc: 'The 5 tradition-defining works to study, with what to steal from each.', prompt: { key: 'c1', label: 'Prompt C1 · Canon' }},
+          { num: 'C2', title: 'Imitation brief', desc: 'A structured exercise: copy one move with a different subject.', prompt: { key: 'c2', label: 'Prompt C2 · Imitation' }},
+          { num: 'C3', title: 'Self-critique scaffold', desc: 'Run a 4-axis critique on your own draft before showing anyone.', prompt: { key: 'c3', label: 'Prompt C3 · Self-critique' }},
+          { num: 'C4', title: 'Studio critique', desc: 'Roleplay a senior editor / critic in workshop. Not kind.', prompt: { key: 'c4', label: 'Prompt C4 · Studio critique' }},
+          { num: 'C5', title: 'Voice extraction', desc: 'After 3–5 pieces, extract the voice that\'s emerging.', prompt: { key: 'c5', label: 'Prompt C5 · Voice extraction' }}
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Studio Critique Mode', time: 'Daily during draft cycles', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'PASS / FAIL replaced with three columns: <strong style="color:var(--green);">Working</strong> · <strong style="color:var(--gold);">Pretending</strong> · <strong style="color:var(--accent);">Cut It</strong>.',
+        steps: [
+          { num: '01', title: 'Switch to Studio Critique', prompt: { key: 'studio', label: 'Studio Critique Mode' }},
+          { num: '02', title: 'The Critique Rule', bullets: ['Self-critique first using C3 — never read AI feedback before writing your own','Receive Working / Pretending / Cut It columns','Cut what\'s in the third column before revising — you cannot polish what should not exist','Mark the cut moves in your craft log; patterns reveal blind spots','Every 3 pieces, re-run Voice Extraction (C5)'] },
+          { num: '03', title: 'Mid-cycle correction', prompt: { key: 'corr', label: 'Pattern Correction · Every 3 pieces' }},
+          { num: '04', title: 'Stuck? Ask the editor what to write next', prompt: { key: 'stuck', label: 'Stuck Prompt' }},
+          { num: '05', title: 'Pressure-rehearsal piece', prompt: { key: 'scen', label: 'Pressure Piece' }}
+        ]},
+      { id: 'p4', num: 'PHASE 4', title: 'Consolidation — Lock the Voice Markers', time: 'Final cycle', tracks: ['standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Generate your Craft Map', prompt: { key: 'cons', label: 'Craft Map Prompt' }},
+          { num: '02', title: 'Capture the cuts', bullets: ['Add the Cut It patterns to a permanent kill-file','Note which canonical moves now show up unprompted in your work','Mark this stack as done in Saved Stacks once you can submit one piece without flinching'] },
+          { num: '03', title: 'Spaced revisions', bullets: ['Revisit one finished piece: Day 1 → Day 3 → Day 7 → Day 30','Each pass: read your own piece *cold* before reading any notes','Run a fresh imitation brief every 30 days, on a new exemplar'] }
+        ]},
+      { id: 'audio', num: 'BONUS', title: 'NotebookLM Studio Audio', time: 'Listen anywhere', tracks: ['standard','block','sustained'], type: 'audio',
+        intro: 'Use NotebookLM <strong style="color:var(--text);">Audio Overview → Customize</strong> to turn your studio stack into passive-listen audio for walks and warm-ups.' }
+    ],
+    audioTabs: [
+      { id: 'audio-debate', label: 'Editors disagree', promptKey: 'audio_debate', promptLabel: 'Audio · Editors disagree' },
+      { id: 'audio-recall', label: 'Move catalogue',   promptKey: 'audio_recall', promptLabel: 'Audio · Move catalogue' },
+      { id: 'audio-traps',  label: 'Common tells',     promptKey: 'audio_traps',  promptLabel: 'Audio · Common tells' },
+      { id: 'audio-deep',   label: 'Deep craft',       promptKey: 'audio_deep',   promptLabel: 'Audio · Deep craft' }
+    ],
+    templates: {
+      open: `You are {{ROLE}}, working with me in studio on the form: {{TOPIC}}.
+
+I am working toward: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded canonical exemplars, a craft book, an anti-model, my own drafts, and one exemplar from a neighbouring tradition.
+
+Your job is NOT to teach me the form, summarise the exemplars, or be encouraging. Your job is to:
+1. Map the canon — name the 5 tradition-defining moves I should study and steal from
+2. Set imitation briefs that drill those moves through structured copying with a different subject
+3. Run studio critique on my drafts — Working / Pretending / Cut It, not PASS/FAIL
+4. Surface the voice emerging in my work after enough pieces
+
+Begin by telling me: what are the 5 canonical moves a {{ROLE_NOUN}} would tell me to steal from the exemplars I've uploaded for {{TOPIC}}?`,
+      c1: `Map the canon for {{TOPIC}}. Name 5 tradition-defining works or practitioners I should study.
+
+For each:
+- The work or practitioner
+- The move it makes that defines the form
+- What specifically I should steal — the technique, not the surface
+- A 200-word imitation exercise that drills that move
+
+Calibrate to {{DEPTH}} level. {{DEPTH_GUIDE}}`,
+      c2: `Give me a structured imitation exercise for {{TOPIC}} based on one canonical move.
+
+The brief should specify:
+- Which exemplar to copy from
+- The exact move to internalise — at the technique level, not the impression level
+- A different subject for me to apply it to
+- A length and constraint (e.g. "200 words, no dialogue")
+- The single thing I'm being assessed on at the end
+
+Make the brief tight. Imitation works because it's narrow.`,
+      c3: `I will paste my draft of a piece in {{TOPIC}}. Run a 4-axis critique:
+
+1. <strong>Craft</strong> — what technical moves are working / not working
+2. <strong>Clarity</strong> — what the reader/viewer/listener actually receives vs. what I intended
+3. <strong>Originality</strong> — where I'm genuinely making a move and where I'm reaching for a familiar gesture
+4. <strong>Emotional truth</strong> — where the piece earns its feeling and where it's borrowing one
+
+Be specific. Quote my draft. No fluff. End with the single change that would most improve the piece.`,
+      c4: `Roleplay a senior {{ROLE_NOUN}} in studio workshop reviewing my draft of {{TOPIC}}.
+
+Don't be kind. Tell me — in three columns:
+- <strong>Working</strong> (the moves that land, with quotes)
+- <strong>Pretending</strong> (the gestures that signal the form without earning it)
+- <strong>Cut It</strong> (what should not exist in the next draft)
+
+Then ask me one hard question about a craft choice I made that you suspect I haven't justified.`,
+      c5: `Across the last 3–5 pieces I've shared on {{TOPIC}}, extract the voice that's emerging.
+
+Specifically:
+1. The 3 moves I make repeatedly that read as *mine*
+2. The 3 moves that read as borrowed and could be dropped
+3. The single subject or obsession my work keeps returning to
+4. The next exemplar I should study to push the emerging voice further
+
+Don't flatter. If the voice is still derivative, say so plainly and prescribe what to do about it.`,
+      studio: `Stop teaching mode. You are now my studio critic for {{TOPIC}}, in workshop. Your job is to mark, not grade.
+
+Rules:
+- I will share a draft. React with three columns: Working / Pretending / Cut It — with a quoted line from my draft for each
+- No PASS / FAIL. No score.
+- After the columns, ask ONE question about a craft choice I haven't justified
+- Then propose ONE imitation exercise that targets my biggest current weakness
+
+{{DEPTH_GUIDE}}
+
+Begin by asking me to share my most recent draft in {{TOPIC}}.`,
+      corr: `Across the last 3 pieces I've shared on {{TOPIC}}, what's the recurring tell — the move I keep making that signals I'm pretending instead of working?
+
+Give me:
+1. The pattern (with quoted examples from my drafts)
+2. Why I keep reaching for it (the underlying anxiety or fluency it papers over)
+3. The imitation exercise that targets the underlying weakness, not the surface gesture`,
+      stuck: `I'm stuck on {{TOPIC}}. Based on our studio sessions so far, what should I be writing/making next?
+
+Specifically:
+1. Which canonical move have I been avoiding without realising?
+2. What single 500-word piece, if I could pull it off, would unlock the next level toward {{GOAL_TEXT}}?
+3. What aspect of the form have I under-imitated relative to its importance?
+
+Then give me the brief — not a menu, one brief.`,
+      scen: `Give me 3 high-pressure pieces I should attempt in {{TOPIC}} — pieces that mimic the constraints of {{AUDIENCE}}.
+
+For each:
+- The brief (subject, length, single craft move it must contain, single move it must avoid)
+- The Pretending version someone at my level would produce
+- The Working version a competent {{ROLE_NOUN}} would produce
+- The mark of an excellent {{ROLE_NOUN}} attempting it
+
+Then assign me Brief 1 and ask me to share a draft for studio critique.`,
+      cons: `Generate a one-page Craft Map for {{TOPIC}}:
+1. The 5 canonical moves I studied and the one most internalised in my work
+2. Top 5 Pretending tells I keep cutting — and the better default I've built
+3. The voice markers that show up unprompted in my recent pieces
+4. The one canonical move I'm still afraid to attempt — and the brief that would force it
+5. My 30-day reading + writing plan: what to study, what to imitate, what to draft
+
+Format as a printable single-page reference. No fluff.`,
+      audio_debate: `Generate audio of two senior {{ROLE_NOUN}}s disagreeing about a real craft question in {{TOPIC}}, calibrated for someone at {{DEPTH}} level.
+
+They should:
+- Disagree about a specific move from one of the uploaded exemplars (use a real disagreement, not manufactured)
+- Quote the exemplar
+- Concede when the other is right about a point
+- End with what each would tell a learner at my level to do next week
+
+Tone: editors / critics around a table, not lecturers. {{DEPTH_GUIDE}}`,
+      audio_recall: `Generate audio of two {{ROLE_NOUN}}s walking through 6–8 craft moves a learner working on {{TOPIC}} should be able to recognise and attempt.
+
+For each move:
+1. State the move clearly
+2. Pause 5 seconds (saying "picture or recall an example now")
+3. Discuss what a clumsy attempt looks like
+4. Discuss what a working attempt looks like
+5. Highlight the tell that gives away pretending
+
+Calibrate to {{DEPTH}} level.`,
+      audio_traps: `Generate audio of two senior {{ROLE_NOUN}}s sharing the most common Pretending tells in {{TOPIC}} at {{DEPTH}} level.
+
+For each tell:
+- The move learners keep reaching for
+- Why it sounds plausible to the learner
+- Why it instantly reads as borrowed to anyone working in the form
+- A specific exercise to retrain past it
+
+Tone: editors over coffee, not a lecture. Cover 5–7 tells.`,
+      audio_deep: `Generate an in-depth audio discussion between two {{ROLE_NOUN}}s on the craft of {{TOPIC}}, calibrated for {{DEPTH}} level working toward {{GOAL_TEXT}}.
+
+Do NOT summarise the uploaded exemplars. Instead:
+- Discuss the underlying craft principles working below the surface
+- Walk through the judgment calls between competing moves and when each dominates
+- Reference specific exemplars naturally as practitioners would
+- Cover the secret refinements not in any craft book
+
+Use technical vocabulary appropriate to the form.`
+    }
+  },
+
+  // ----------------------------------------------------------------
+  // PROJECT — ship a real artifact
+  // ----------------------------------------------------------------
+  project: {
+    label: 'Project',
+    emoji: '🛠',
+    desc: '"Ship a weather station" — applied learning, build & demo',
+    defaultTrack: 'sprint',
+    what48h: 'A shipped v1 of a real artifact. Matches what 12–48h focused build-sprints actually produce. Not production-grade — a working v1.',
+    depthLabels: { beginner: 'Tutorial', intermediate: 'Toy build', expert: 'Production', professional: 'Battle-tested' },
+    goalOptions: [
+      { val: 'build',   label: 'Build/Ship' },
+      { val: 'master',  label: 'Master' },
+      { val: 'present', label: 'Demo it' },
+      { val: 'decide',  label: 'Make decision' }
+    ],
+    presets: [
+      { id: 'side',     icon: '🚀', label: 'Side project',       role: 'a staff engineer who has shipped a similar thing',           audience: 'a working v1 demo by end of weekend',     depth: 'intermediate', goal: 'build', context: 'I want to ship a working v1 in one focused weekend. Help me cut scope ruthlessly, find the riskiest assumption, and build the smallest spike that proves it.' },
+      { id: 'internal', icon: '⚙',  label: 'Internal tool',      role: 'a tech lead who has shipped 3 internal tools at scale',     audience: 'a tool real teammates use weekly',         depth: 'intermediate', goal: 'build', context: 'I want to ship a tool that real colleagues use, not a prototype. Focus on the smallest scope that captures real value, the integration risks, and the demo that earns adoption.' },
+      { id: 'paper',    icon: '📄', label: 'Research artifact',  role: 'a senior researcher who ships reproducible code with papers', audience: 'reproducible code accompanying a paper',  depth: 'expert',       goal: 'build', context: 'I want a research artifact that someone else can clone and reproduce. Focus on the minimum viable reproducibility surface and what reviewers actually check.' },
+      { id: 'demo',     icon: '🎬', label: 'Demo build',         role: 'a senior engineer who builds for executive demos',          audience: 'a high-stakes demo to non-technical stakeholders', depth: 'intermediate', goal: 'present', context: 'I want a demo that holds up under non-technical scrutiny. Focus on the demo path, the failure modes that always blow up demos, and the spike that de-risks the worst one.' },
+      { id: 'blank',    icon: '○',  label: 'Blank',              role: '', audience: '', depth: 'intermediate', goal: 'build', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: 'Spec / requirements doc', text: '— even a rough one in your own words' },
+      { strong: '1 reference implementation', text: '— a similar thing someone has shipped, that you can read' },
+      { strong: '1 post-mortem', text: '— of a similar project that went wrong (this is your contrarian)' },
+      { strong: 'Your design notes', text: '— sketches, decisions, open questions' },
+      { strong: '1 alternative-architecture source', text: '— a different way of solving the same problem' }
+    ],
+    walkthrough: {
+      title: 'Example: Build and ship a small Postgres extension in 12 hours',
+      lede: 'A Sprint-track session for a working engineer. Topic: <strong>A small Postgres extension that adds one custom function</strong>. Goal: shipped v1 by Sunday night.',
+      steps: [
+        { kind: 'you', label: 'You upload to Claude', html: 'pgx documentation, the <em>pg_uuidv7</em> source as a reference implementation, a post-mortem of a deprecated extension that mishandled session memory, your one-page design notes, and a Rust-based pgrx tutorial as the alternative architecture.' },
+        { kind: 'you', label: 'You configure the stack', html: 'Mode: <strong>Project</strong>  ·  Track: <strong>Sprint · 12h</strong>  ·  Topic: <strong>Postgres extension adding a windowed analytics function</strong>  ·  Role: <strong>staff engineer who has shipped pg extensions</strong>  ·  Goal: Build/Ship' },
+        { kind: 'you', label: 'You send Prompt P1 (Spec)', html: '<em>"Help me write a one-page spec: scope, success criteria, what\'s explicitly out of scope, the simplest possible v0."</em>' },
+        { kind: 'ai',  label: 'AI returns the spec', html: 'Scope: one custom aggregate function. Success: ships, runs in psql, has one test. Out of scope: parallelism, custom types, packaging. v0: write the C function as a SQL CTE first to validate the algorithm.' },
+        { kind: 'you', label: 'You send Prompt P2 (Spike)', html: '<em>"Smallest 2-hour thing that proves the riskiest assumption."</em>' },
+        { kind: 'ai',  label: 'AI surfaces the spike', html: 'Risk: memory lifetime in the C aggregate state. Spike: a no-op aggregate that allocates state and frees it across 1M rows. Pass = no leak in pg_stat. <em>You build the spike first, find a leak, fix it before any real logic.</em>' },
+        { kind: 'you', label: 'You switch to Pair Practitioner Mode', html: 'AI now sits next to you on the build, asking <em>"why before how"</em> at each milestone. At v1 demo review, AI asks: <strong>"What happens if a user calls this with NULL? What happens at 100M rows?"</strong>' },
+        { kind: 'you', label: 'After 12 hours total', html: 'You have a shipped v1 with a passing test, a one-page README, and a list of the 3 production-grade things you\'d add for v2. <em>Not battle-tested. But real.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack Your Sources', time: '~1 hr setup', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Skip Deep Research mode.</strong> You don\'t need a survey of approaches — you need one reference implementation and one post-mortem.',
+        tagsHtml: '<span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tip">Read 1 PR, not 10</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Open the Build', time: 'Hour 0–1', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: 'Frames the AI as a staff-level pair, not a tutor.', prompt: { key: 'open', label: 'Opening Prompt' }, after: 'Write the riskiest assumption surfaced in your physical notebook. That assumption is what your spike must kill in the next 2 hours.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'Spec → Spike → Plan', time: 'Hour 1–6', tracks: ['sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Use sequentially. Build sprints fail when you skip the spec or skip the spike — never both.',
+        steps: [
+          { num: 'P1', title: 'Write the one-page spec', desc: 'Scope, success criteria, explicit out-of-scope, simplest v0.', prompt: { key: 'p1', label: 'Prompt P1 · Spec' }},
+          { num: 'P2', title: 'Run the riskiest-assumption spike', desc: 'A 2-hour build whose only purpose is killing one assumption.', prompt: { key: 'p2', label: 'Prompt P2 · Spike' }},
+          { num: 'P3', title: 'Decompose to ≤7 milestones', desc: 'Each milestone ≤4h with definition of done and failure mode.', prompt: { key: 'p3', label: 'Prompt P3 · Build plan' }}
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Pair-Practitioner Mode', time: 'Hour 6–10', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Not an examiner. Not a teacher. Sits next to you on the build, asks <em>why</em> before <em>how</em>, and runs demo review on what you\'ve shipped.',
+        steps: [
+          { num: '01', title: 'Switch to Pair Practitioner', prompt: { key: 'pair', label: 'Pair-Practitioner Mode' }},
+          { num: '02', title: 'The Build Rule', bullets: ['At each milestone: state your intended approach in one sentence before writing code','AI asks one why-question — answer before proceeding','At v0.5 and v1 demo review, paste what you built and run P4','Mark every "I would have shipped that broken" moment in your build log','When you hit a wall, run the Stuck prompt — never silently rabbit-hole'] },
+          { num: '03', title: 'Mid-build correction', prompt: { key: 'corr', label: 'Build Correction · Every 2 milestones' }},
+          { num: '04', title: 'Stuck? Ask the pair what\'s blocking', prompt: { key: 'stuck', label: 'Stuck Prompt' }},
+          { num: '05', title: 'Demo Review', prompt: { key: 'p4', label: 'Prompt P4 · Demo review' }}
+        ]},
+      { id: 'p4', num: 'PHASE 4', title: 'Retrospective — Capture What You Learned', time: 'Hour 10–12', tracks: ['standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Run the retrospective', prompt: { key: 'p5', label: 'Prompt P5 · Retrospective' }},
+          { num: '02', title: 'Capture the hidden complexity', bullets: ['Add the surprises to your design notes — these are the moves you\'ll reuse','List the 3 production-grade things you\'d add for v2','Mark this stack as done in Saved Stacks once v1 is demo-ready'] },
+          { num: '03', title: 'v2 schedule', bullets: ['If v2 matters: schedule a Block-track follow-up that targets the production gaps','Otherwise: write a one-paragraph "what I learned" note and ship the v1 publicly','Decide now — drift is what kills these projects'] }
+        ]},
+      { id: 'audio', num: 'BONUS', title: 'NotebookLM Build Audio', time: 'Listen during commutes', tracks: ['standard','block','sustained'], type: 'audio',
+        intro: 'Use NotebookLM <strong style="color:var(--text);">Audio Overview → Customize</strong> to turn your build stack into passive-listen audio while you\'re away from the keyboard.' }
+    ],
+    audioTabs: [
+      { id: 'audio-debate', label: 'Architecture argument', promptKey: 'audio_debate', promptLabel: 'Audio · Architecture argument' },
+      { id: 'audio-recall', label: 'Demo-day questions',    promptKey: 'audio_recall', promptLabel: 'Audio · Demo-day questions' },
+      { id: 'audio-traps',  label: 'How builds fail',       promptKey: 'audio_traps',  promptLabel: 'Audio · How builds fail' },
+      { id: 'audio-deep',   label: 'Production gaps',       promptKey: 'audio_deep',   promptLabel: 'Audio · Production gaps' }
+    ],
+    templates: {
+      open: `You are {{ROLE}}, pairing with me on a real build of: {{TOPIC}}.
+
+I am working toward: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded a rough spec, one reference implementation, one post-mortem of a similar project that went wrong, my design notes, and one alternative-architecture source.
+
+Your job is NOT to teach me the technology, summarise the docs, or write all the code. Your job is to:
+1. Pin down the *riskiest assumption* in this build and the smallest spike that kills it
+2. Help me write a one-page spec with a v0 I can ship in 2 hours
+3. Pair on the build — ask "why" before "how", at every milestone
+4. Run demo review at v0.5 and v1 — the 5 sharpest questions a senior reviewer would ask
+
+Begin by telling me: what is the single riskiest assumption in shipping {{TOPIC}}, and the smallest 2-hour spike a {{ROLE_NOUN}} would build to kill it?`,
+      p1: `Help me write a one-page spec for {{TOPIC}}. The spec must contain:
+
+1. <strong>Scope</strong> — what v1 *will* do, in one paragraph
+2. <strong>Success criteria</strong> — 3 observable signals that v1 works
+3. <strong>Out of scope (explicit)</strong> — what v1 *will not* do, even if tempting
+4. <strong>v0</strong> — the simplest possible thing I can ship in 2 hours that's not a stub
+5. <strong>Riskiest assumption</strong> — the one thing that, if wrong, kills the project
+
+Be ruthless about scope. Calibrate to {{DEPTH}} level and {{GOAL_TEXT}}.`,
+      p2: `For my build of {{TOPIC}}, give me the smallest 2-hour spike that proves the riskiest assumption from the spec.
+
+The spike should:
+- Be the *minimum* code that puts the assumption under real stress (not a unit test, not a mock)
+- Have one binary outcome: assumption holds, or assumption breaks
+- Tell me what to do for each outcome before I start
+
+Specify: what to build, what data/inputs to use, what success looks like, what failure looks like.`,
+      p3: `Decompose v1 of {{TOPIC}} into ≤7 ordered milestones. Each milestone must be ≤4 hours.
+
+For each milestone:
+- One-sentence definition of done
+- The way I'll know it's broken
+- The failure mode that would force a re-spec (vs. a fix)
+- Whether it depends on a prior milestone
+
+Order them so that each milestone produces something demoable, even if ugly. Calibrate to {{DEPTH}} level.`,
+      p4: `I just shipped v0.5 / v1 of {{TOPIC}}. I'll describe what I built (or paste a README / sample output).
+
+You play a senior {{ROLE_NOUN}} at demo day. Ask the 5 sharpest questions you would ask:
+1. About correctness — what edge case I clearly haven't tested
+2. About scaling — what fails at 100× current load
+3. About operability — what someone on-call wishes I had built
+4. About interface — what a user would misuse and how it breaks
+5. About cost — what gets expensive when this succeeds
+
+After my answers, give me a verdict: <strong>Reasonable</strong> / <strong>Risky</strong> / <strong>Wrong</strong> on the *reasoning trace*, not the artifact.`,
+      p5: `v1 of {{TOPIC}} ships. Run the retrospective.
+
+1. What was the hidden complexity I underestimated? (Be specific — quote the milestone where I underestimated it.)
+2. What assumption from the spec turned out to be wrong? What did I learn from being wrong?
+3. What would I do differently if I started v2 today?
+4. What 3 production-grade things would I add for v2 if it mattered?
+5. What single move from this build will I reuse on the next project?
+
+Format as a printable single-page note. No fluff.`,
+      pair: `Stop teaching mode. You are now my pair-practitioner on the build of {{TOPIC}}.
+
+Rules:
+- At each milestone, I state my intended approach in one sentence. You ask ONE "why" question before I proceed
+- When I commit a build decision, do NOT explain alternatives unless I ask — I'm building, not surveying
+- If I head into a rabbit-hole that contradicts the spec, stop me with one question that points back to the spec
+- At v0.5 and v1, run demo review (P4)
+- After v1, run the retrospective (P5)
+
+{{DEPTH_GUIDE}}
+
+Begin by asking me: what milestone am I starting now, and what is my one-sentence intended approach?`,
+      corr: `Across the last 2 milestones on {{TOPIC}}, what's the recurring decision pattern that's slowing me down or producing fragile code?
+
+Give me:
+1. The pattern (with concrete examples from my build log)
+2. The underlying habit driving it
+3. The one rule I should adopt for the remaining milestones to break the habit`,
+      stuck: `I'm stuck on {{TOPIC}}. Based on the build so far, what's actually blocking me?
+
+Specifically:
+1. Which assumption from the spec is the real blocker — not the symptom I'm staring at?
+2. What single 30-minute spike would unblock me toward {{GOAL_TEXT}}?
+3. What part of the build have I been over-engineering relative to its risk?
+
+Then prescribe ONE next action — not a menu — and tell me when to come back if it doesn't work.`,
+      scen: `Give me 3 realistic demo-day scenarios for {{TOPIC}} — situations a stakeholder of {{AUDIENCE}} would put my build into.
+
+For each:
+- The scenario (specific stakeholder, specific question, specific stakes)
+- The shallow answer that gets me caught
+- The competent answer a {{ROLE_NOUN}} would give
+- The excellent answer that earns trust
+
+Then put me in Scenario 1 — describe the situation, ask me to defend my build, and grade the reasoning trace.`,
+      cons: `Generate a one-page Build Map for {{TOPIC}}:
+1. The spec as it actually shipped (vs. what I wrote on Day 0)
+2. The riskiest assumption — and what the spike taught me
+3. The 3 milestones that took longer than I expected, with one-line reasons
+4. The 3 production-grade gaps I left in v1 (be honest)
+5. My 30-day decision: ship it as-is, build v2, or kill it — with the one-line case for each
+
+Format as a printable single-page note.`,
+      audio_debate: `Generate audio of two senior {{ROLE_NOUN}}s arguing about the right architecture for {{TOPIC}}.
+
+They should:
+- Disagree about a real architectural choice (use one from the alternative-architecture source you uploaded)
+- Cite specific failure modes each architecture is vulnerable to
+- Concede when the other has a point
+- End with what each would tell a builder at {{DEPTH}} level to do this weekend
+
+Tone: senior engineers at a whiteboard, not a lecture. {{DEPTH_GUIDE}}`,
+      audio_recall: `Generate audio of two {{ROLE_NOUN}}s walking through 6–8 demo-day questions a builder of {{TOPIC}} should be able to answer cold.
+
+For each question:
+1. State it clearly
+2. Pause 5 seconds (saying "answer in your head now")
+3. Discuss what a hand-wave answer sounds like
+4. Discuss what a senior answer sounds like
+5. Highlight the follow-up that exposes the hand-wave
+
+Calibrate to {{DEPTH}} level and {{AUDIENCE}}.`,
+      audio_traps: `Generate audio of two senior {{ROLE_NOUN}}s telling war stories about how builds like {{TOPIC}} fail at {{DEPTH}} level.
+
+For each failure mode:
+- The specific decision that doomed the build
+- Why it sounded reasonable at the time
+- The one signal that should have triggered a stop
+- A short anecdote of someone who hit this exact failure
+
+Cover 5–7 failure modes. Tone: engineers around a beer, not a lecture.`,
+      audio_deep: `Generate an in-depth audio discussion between two {{ROLE_NOUN}}s on the production gaps that almost always remain in a v1 of {{TOPIC}}, calibrated for {{DEPTH}} level working toward {{GOAL_TEXT}}.
+
+Do NOT summarise the docs. Instead:
+- Discuss the operability, scaling, and security gaps that v1s ship with
+- Walk through the judgment calls about which gaps to close before launch and which can wait
+- Reference the post-mortem I uploaded as a cautionary specific
+- Cover the production refinements that aren't in any tutorial
+
+Use technical vocabulary appropriate to the field.`
+    }
+  },
+
+  // ----------------------------------------------------------------
+  // SOCRATIC — humanities, philosophy, ethics, narrative history
+  // ----------------------------------------------------------------
+  socratic: {
+    label: 'Socratic',
+    emoji: '📜',
+    desc: 'Humanities, philosophy, ethics, narrative history',
+    defaultTrack: 'standard',
+    what48h: 'A position formed, pressed, and defendable. Matches what one good seminar arc gets you. Not the final word — a real starting place.',
+    depthLabels: { beginner: 'Reader', intermediate: 'Student', expert: 'Scholar', professional: 'Specialist' },
+    goalOptions: [
+      { val: 'master',  label: 'Hold a position' },
+      { val: 'present', label: 'Defend it' },
+      { val: 'decide',  label: 'Live by it' },
+      { val: 'create',  label: 'Write from it' }
+    ],
+    presets: [
+      { id: 'stoic',    icon: '🏛',  label: 'Practical philosophy', role: 'a senior tutor in this tradition with a working life',          audience: 'living by what I believe',                     depth: 'intermediate', goal: 'decide',  context: 'I want to develop a position I can actually live by, not just quote. Press me — find the strongest counter-arguments and refine my position with me, not at me.' },
+      { id: 'phen',     icon: '🌫', label: 'Phenomenology / theory', role: 'a scholar who has lived inside this tradition for 30 years',  audience: 'understanding the tradition from the inside',  depth: 'expert',       goal: 'master',  context: 'I want to understand this tradition the way someone inside it understands it, not as a tourist. Map the live disagreements, then press me to commit to one position.' },
+      { id: 'law',      icon: '⚖',  label: 'Constitutional / legal', role: 'a law professor who has argued at the highest level',         audience: 'forming a defensible legal position',          depth: 'expert',       goal: 'present', context: 'I want to form a legal position I could defend at length. Surface the live doctrinal disagreements, press me to commit, then play the strongest counter-counsel.' },
+      { id: 'history',  icon: '📜', label: 'Narrative history',     role: 'a working historian who has revised the standard account',     audience: 'an essay-length argument about a contested period', depth: 'intermediate', goal: 'create',  context: 'I want a defensible historical interpretation, not a recap. Map the historiographical debates, press me to take a side, then play the strongest revisionist.' },
+      { id: 'blank',    icon: '○',  label: 'Blank',                role: '', audience: '', depth: 'intermediate', goal: 'master', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: '2 primary texts', text: '— the actual sources, not summaries' },
+      { strong: '1 secondary commentary', text: '— a serious reading by a working scholar' },
+      { strong: '1 critic of the tradition', text: '— from outside or below it' },
+      { strong: 'Your own marginalia', text: '— your notes, questions, and confusions' },
+      { strong: '1 text from the opposing school', text: '— what your tradition is arguing against' }
+    ],
+    walkthrough: {
+      title: 'Example: Reading Stoicism for life, not for quoting, in 30 days',
+      lede: 'A Standard-track session for a serious reader. Topic: <strong>Stoic ethics</strong>. Goal: form a position I can actually live by.',
+      steps: [
+        { kind: 'you', label: 'You upload to Claude / NotebookLM', html: 'Aurelius\' <em>Meditations</em> (full), Epictetus\' <em>Discourses</em> (Books 1–2), Pierre Hadot\'s <em>Philosophy as a Way of Life</em>, Martha Nussbaum\'s critique in <em>The Therapy of Desire</em>, your own journal, and a Buddhist primer (Zhuangzi or Thich Nhat Hanh) as the contrast.' },
+        { kind: 'you', label: 'You configure the stack', html: 'Mode: <strong>Socratic</strong>  ·  Track: <strong>Standard · 48h</strong>  ·  Topic: <strong>Stoic ethics — practice, not aesthetic</strong>  ·  Role: <strong>senior tutor in the tradition with a working life</strong>  ·  Goal: Live by it' },
+        { kind: 'you', label: 'You send the Opening Prompt', html: '<em>"You are a senior tutor... Surface the 3 hardest questions the tradition itself struggles with — not exam questions, real live problems."</em>' },
+        { kind: 'ai',  label: 'AI returns 3 live problems', html: 'Whether <em>apatheia</em> is virtue or moral abdication · whether external indifferents really are indifferent (Nussbaum\'s charge) · whether the Stoic universe needs God to be coherent. <em>You commit to Question 2.</em>' },
+        { kind: 'you', label: 'You commit to a position on Q2', html: '"Externals are not metaphysically indifferent — but my <em>investment</em> in them must be." (You write 3 sentences.)' },
+        { kind: 'ai',  label: 'AI presses, doesn\'t grade', html: 'AI: <strong>SHARPER:</strong> the move from metaphysical to investment is real. <strong>BUT:</strong> Nussbaum would say you\'ve smuggled in a Christian distinction — Aurelius would not have made it. Defend or revise. <em>You revise. Then defend.</em>' },
+        { kind: 'you', label: 'You stake the position', html: 'AI roleplays Nussbaum at her sharpest. You defend, lose ground twice, and reformulate. <em>The position is now actually yours, because it survived someone trying to break it.</em>' },
+        { kind: 'you', label: 'After 30 days (~48h)', html: 'You have a defensible position on the live problem, a journal of where you slipped, and the discipline of being pressed without being graded. <em>You can now read Aurelius without reaching for a highlighter.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack Your Texts', time: '~1 hr setup', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Skip Deep Research mode.</strong> The point is reading texts closely, not surveying scholarship. Two primaries, one commentary, one critic — that\'s the seminar.',
+        tagsHtml: '<span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tool">NotebookLM</span> <span class="tag tag-tip">Read primaries</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Open the Seminar', time: 'Hour 0–1', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: 'Frames the AI as a tutor who presses, not a teacher who summarises.', prompt: { key: 'open', label: 'Opening Prompt' }, after: 'Write the 3 live problems the AI surfaces in your physical notebook. You will commit to one of them.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'Pose → Press → Map → Synthesize', time: 'Hour 1–24', tracks: ['sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Use sequentially. Socratic learning is dialogue: you commit, get pressed, refine, commit again — until the position survives.',
+        steps: [
+          { num: 'So1', title: 'Pose the live problems', desc: 'The 3 hardest questions the tradition struggles with.', prompt: { key: 'so1', label: 'Prompt So1 · Pose' }},
+          { num: 'So2', title: 'Press my position', desc: 'You commit to a position. AI presses with the strongest counter-arguments.', prompt: { key: 'so2', label: 'Prompt So2 · Press' }},
+          { num: 'So3', title: 'Map the positions', desc: 'Where do the major thinkers actually disagree, vs. just use different vocabulary?', prompt: { key: 'so3', label: 'Prompt So3 · Map' }},
+          { num: 'So4', title: 'Synthesize my own', desc: 'Articulate what I hold, why, and against what.', prompt: { key: 'so4', label: 'Prompt So4 · Synthesize' }},
+          { num: 'So5', title: 'Stake it against the strongest opponent', desc: 'AI roleplays the thinker who would most disagree. Not a strawman.', prompt: { key: 'so5', label: 'Prompt So5 · Stake it' }}
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Dialogue Mode — Pressing, Not Grading', time: 'Hour 24–40', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'PASS / FAIL replaced with <strong style="color:var(--green);">Sharper</strong> · <strong style="color:var(--gold);">Same</strong> · <strong style="color:var(--accent);">Slipped</strong>. We are developing a position together.',
+        steps: [
+          { num: '01', title: 'Switch to Dialogue Mode', prompt: { key: 'dialogue', label: 'Dialogue Mode' }},
+          { num: '02', title: 'The Press Rule', bullets: ['Commit to a position in writing first — never read AI counter before','Receive Sharper / Same / Slipped, with the specific move that earned the verdict','When you slip, you must reformulate before the next press — not move on','Mark every reformulation in your dialectic log; the moves you keep making become the position','Every 5 presses, run the Pattern Correction prompt'] },
+          { num: '03', title: 'Mid-dialogue correction', prompt: { key: 'corr', label: 'Pattern Correction · Every 5 presses' }},
+          { num: '04', title: 'Stuck? Ask the tutor what you\'re circling', prompt: { key: 'stuck', label: 'Stuck Prompt' }},
+          { num: '05', title: 'High-stakes scenario', prompt: { key: 'scen', label: 'Stake it scenario' }}
+        ]},
+      { id: 'p4', num: 'PHASE 4', title: 'Consolidation — State the Position', time: 'Hour 40–48', tracks: ['standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Generate your Position Map', prompt: { key: 'cons', label: 'Position Map Prompt' }},
+          { num: '02', title: 'Capture the slips', bullets: ['Add the moves where you slipped to a permanent dialectic log — they are your blind spots','Note which counter-arguments you can now answer cold','Mark this stack as done in Saved Stacks once you can defend the position to a stranger'] },
+          { num: '03', title: 'Spaced re-pressure', bullets: ['Re-stake the position: Day 1 → Day 7 → Day 30','Each re-stake: write your defence cold *first*, then check the AI press','Run a fresh So5 (strongest opponent) every 30 days — positions decay if not pressed'] }
+        ]},
+      { id: 'audio', num: 'BONUS', title: 'NotebookLM Seminar Audio', time: 'Listen anywhere', tracks: ['standard','block','sustained'], type: 'audio',
+        intro: 'Use NotebookLM <strong style="color:var(--text);">Audio Overview → Customize</strong> to turn your seminar stack into passive-listen audio for walks.' }
+    ],
+    audioTabs: [
+      { id: 'audio-debate', label: 'Live disagreement', promptKey: 'audio_debate', promptLabel: 'Audio · Live disagreement' },
+      { id: 'audio-recall', label: 'Position questions', promptKey: 'audio_recall', promptLabel: 'Audio · Position questions' },
+      { id: 'audio-traps',  label: 'Reader\'s tells',     promptKey: 'audio_traps',  promptLabel: 'Audio · Reader\'s tells' },
+      { id: 'audio-deep',   label: 'Inside the tradition', promptKey: 'audio_deep',  promptLabel: 'Audio · Inside the tradition' }
+    ],
+    templates: {
+      open: `You are {{ROLE}}, working with me through the texts on: {{TOPIC}}.
+
+I am working toward: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded primary texts, a serious commentary, a critic, my own marginalia, and a text from the opposing school.
+
+Your job is NOT to summarise the texts, give me a Wikipedia answer, or be a teacher. Your job is to:
+1. Surface the 3 hardest questions the tradition itself struggles with — not exam questions, live problems
+2. Press me when I commit to a position — find the strongest counter-arguments and force me to refine
+3. Map where the major thinkers actually disagree (vs. just use different vocabulary)
+4. Stake my position against the strongest opponent — never strawmanned
+
+Begin by telling me: what are the 3 hardest live problems inside {{TOPIC}} that the tradition itself has not settled — the ones a {{ROLE_NOUN}} would actually press a serious student on?`,
+      so1: `For {{TOPIC}}, surface the 3 hardest questions the tradition itself struggles with.
+
+For each:
+- State the live problem in one sentence — not in tradition-internal jargon
+- Why it remains live (what evidence or argument keeps it open)
+- Which uploaded sources speak to it most directly
+- Which thinker has the most defensible position on it, and what their position is
+
+Calibrate to {{DEPTH}} level. {{DEPTH_GUIDE}}`,
+      so2: `I am about to commit to a position on the live problem we picked. (I will paste my position in 2–4 sentences.)
+
+When I share it, do not grade me. Press me:
+1. Find the strongest counter-argument an opponent inside the tradition would raise
+2. Find the strongest counter-argument an outsider would raise (use the critic I uploaded)
+3. Identify the assumption in my position that's doing the most work — name it
+4. Ask me one question that, if I cannot answer, my position cannot stand
+
+After my response, push me one more level. We are developing the position together — not testing it.`,
+      so3: `Map the positions held by the major thinkers in my uploaded sources on {{TOPIC}}.
+
+For each thinker:
+- Their core position in one sentence (in their voice, not yours)
+- The assumption that distinguishes them from the others
+- The opponent they were primarily writing against
+- Where they actually disagree with the others — vs. where they just use different vocabulary for the same move
+
+End with the single live disagreement that's most generative for {{GOAL_TEXT}}.`,
+      so4: `I am ready to articulate my own position on {{TOPIC}}. Help me state it cleanly.
+
+Walk me through:
+1. What I hold — in one paragraph, in my voice
+2. The 3 reasons I hold it (not surveys, my reasons)
+3. The 2 strongest counter-arguments and how I answer them
+4. Where I am still uncertain (be honest)
+5. The thinker my position is closest to — and where I would refuse to follow them
+
+Help me write this as a usable position statement, not a meta-commentary about positions.`,
+      so5: `Roleplay the thinker from my sources who would most strongly disagree with the position I just articulated.
+
+Make their best case. Specifically:
+1. Quote their actual texts (from what I uploaded) where they undermine my assumptions
+2. Identify the move I made that they would refuse
+3. Press me on it as they would
+4. Concede only what their own arguments would force them to concede
+
+Do not strawman. Treat them as a serious thinker making the strongest case against me.`,
+      dialogue: `Stop teaching mode. You are now my Socratic interlocutor on {{TOPIC}}.
+
+Rules:
+- I commit to a position in writing first
+- You respond with one of: <strong>Sharper</strong> (the move strengthens my position) · <strong>Same</strong> (no real change) · <strong>Slipped</strong> (the move weakens or contradicts my position)
+- For each verdict, name the specific move that earned it — quoting my words
+- Then press one level deeper with the strongest counter you can muster
+- Never grade. Never give the model answer. We are developing the position together.
+
+{{DEPTH_GUIDE}}
+
+Begin by asking me to commit to a position on the most generative live problem in {{TOPIC}}.`,
+      corr: `Across the last 5 presses on my position in {{TOPIC}}, what's the recurring move I keep making that weakens my own case?
+
+Give me:
+1. The pattern (with quoted examples from my own writing)
+2. The unstated assumption it always smuggles in
+3. The reformulation that keeps the spirit of my position but cuts the weak move`,
+      stuck: `I'm stuck on {{TOPIC}}. Based on our dialogue so far, what am I circling without grasping?
+
+Specifically:
+1. Which question have I been avoiding committing to?
+2. What single distinction, if I could draw it cleanly, would unlock the next level toward {{GOAL_TEXT}}?
+3. What part of the tradition have we under-pressed relative to its importance?
+
+Then ask me the most useful next question yourself — and demand I answer before continuing.`,
+      scen: `Give me 3 high-stakes scenarios in {{TOPIC}} — situations where my position has to do real work, not just sit on a page.
+
+For each:
+- The situation concretely (specific stakeholder, specific decision, specific stakes)
+- The hand-wave answer someone with my level of reading would give
+- The competent answer a {{ROLE_NOUN}} would give
+- The excellent answer that earns trust under pressure
+
+Then put me in Scenario 1 — describe the situation, ask me to defend my position, and tell me Sharper / Same / Slipped on each move.`,
+      cons: `Generate a one-page Position Map for {{TOPIC}}:
+1. The 3 live problems and the one I committed to
+2. My position in 5 sentences (in my voice)
+3. The 3 strongest counter-arguments and my response to each
+4. The thinker I am closest to — and where I refuse to follow them
+5. The 3 moves I kept slipping on, and the new defaults I have built
+6. The single question I am still uncertain about — and the next text that would help
+
+Format as a printable single-page reference. No fluff.`,
+      audio_debate: `Generate audio of two scholars in {{TOPIC}} disagreeing about a real live problem in the tradition, calibrated for someone at {{DEPTH}} level.
+
+They should:
+- Disagree about a specific question from the uploaded texts (use a real disagreement)
+- Quote their texts
+- Concede when the other has a point
+- End with what each would tell a serious student to commit to first
+
+Tone: scholars at a seminar table, not lecturers. {{DEPTH_GUIDE}}`,
+      audio_recall: `Generate audio of two {{ROLE_NOUN}}s walking through 6–8 questions a serious reader of {{TOPIC}} should be able to answer with their own position.
+
+For each question:
+1. State it clearly
+2. Pause 5 seconds (saying "commit silently to a position now")
+3. Discuss what a student-level answer sounds like
+4. Discuss what a position-holding answer sounds like
+5. Highlight the slip most readers make at this level
+
+Calibrate to {{DEPTH}} level.`,
+      audio_traps: `Generate audio of two senior scholars on the most common reader-tells in {{TOPIC}} — moves that signal "I have read but not committed."
+
+For each tell:
+- The move
+- Why it sounds rigorous to the reader
+- Why it's actually evasion of commitment
+- The specific pressing question that exposes it
+
+Cover 5–7 tells. Tone: scholars who have seen it many times, not lecturers.`,
+      audio_deep: `Generate an in-depth audio discussion between two {{ROLE_NOUN}}s reading {{TOPIC}} from inside the tradition, calibrated for {{DEPTH}} level working toward {{GOAL_TEXT}}.
+
+Do NOT summarise the texts. Instead:
+- Discuss the live disagreements that the tradition has not settled
+- Walk through the moves the major thinkers make against each other
+- Reference the uploaded primaries and critics naturally
+- Cover the refinements that show up only after long inhabitation
+
+Use vocabulary appropriate to the tradition. Assume the listener has read the primaries.`
+    }
+  },
+
+  // ----------------------------------------------------------------
+  // DIAGNOSTIC — case rounds, troubleshooting, casework
+  // ----------------------------------------------------------------
+  diagnostic: {
+    label: 'Diagnostic',
+    emoji: '🩺',
+    desc: 'Medicine, troubleshooting, forensic, casework',
+    defaultTrack: 'sprint',
+    what48h: 'A working pattern library plus a sharpened differential reflex. Matches case-method literature (Bordage). Not specialty-grade — first-pass-fast.',
+    depthLabels: { beginner: 'Trainee', intermediate: 'Junior', expert: 'Senior', professional: 'Attending' },
+    goalOptions: [
+      { val: 'diagnose', label: 'Diagnose' },
+      { val: 'master',   label: 'Master' },
+      { val: 'exam',     label: 'Pass exam' },
+      { val: 'decide',   label: 'Make calls' }
+    ],
+    presets: [
+      { id: 'primary',  icon: '🩺', label: 'Primary-care DDx',     role: 'a senior GP / attending who teaches case-method',          audience: 'making sound first-pass calls in clinic',   depth: 'intermediate', goal: 'diagnose', context: 'I want to sharpen my differential reflex on common presentations. Run me through real-feeling cases, force commitment, then critique my reasoning, not just my answer.' },
+      { id: 'netops',   icon: '🌐', label: 'Network troubleshooting', role: 'a senior network engineer who triages outages',         audience: 'leading a real outage triage',              depth: 'intermediate', goal: 'diagnose', context: 'I want to triage outages faster and avoid anchoring. Throw me cases with vital signs only, force a top-3 differential before any investigation.' },
+      { id: 'codereview', icon: '🔍', label: 'Code review',          role: 'a staff engineer who has reviewed at scale',              audience: 'reviewing real PRs reliably',               depth: 'expert',       goal: 'diagnose', context: 'I want a sharper review reflex that catches the issues a tired reviewer would miss. Run me through PRs as cases — observables only — and force commitment.' },
+      { id: 'forensic', icon: '🔬', label: 'Forensic accounting',   role: 'a partner in forensic accounting',                        audience: 'leading a real fraud investigation',         depth: 'expert',       goal: 'diagnose', context: 'I want to sharpen my anomaly-detection reflex. Throw me anonymised case ledgers and force me to commit to a top-3 hypothesis before requesting more data.' },
+      { id: 'blank',    icon: '○',  label: 'Blank',                  role: '', audience: '', depth: 'intermediate', goal: 'diagnose', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: 'Case archive', text: '— a set of real or de-identified cases in the domain' },
+      { strong: 'Canonical reference', text: '— the textbook / authoritative manual for the field' },
+      { strong: 'Atlas of atypical presentations', text: '— what the rare or misleading cases actually look like' },
+      { strong: 'Your case log', text: '— cases you\'ve handled or studied, with your decisions' },
+      { strong: '1 source on cognitive errors', text: '— in this field (anchoring, premature closure, etc.)' }
+    ],
+    walkthrough: {
+      title: 'Example: Sharpening shortness-of-breath DDx in primary care, 2 weeks',
+      lede: 'A Block-track session for a junior doctor. Topic: <strong>Differential diagnosis for shortness of breath in adult primary care</strong>. Goal: faster, more accurate first-pass calls.',
+      steps: [
+        { kind: 'you', label: 'You upload to NotebookLM', html: 'A primary-care SOB chapter from a standard textbook, the Bordage paper on cognitive errors in clinical reasoning, an atlas of atypical PE presentations, your last 30 anonymised case notes, and one paper on diagnostic momentum / anchoring.' },
+        { kind: 'you', label: 'You configure the stack', html: 'Mode: <strong>Diagnostic</strong>  ·  Track: <strong>Block · 2wk</strong>  ·  Topic: <strong>SOB DDx, primary care</strong>  ·  Role: <strong>senior GP teaching case-method</strong>  ·  Goal: Diagnose' },
+        { kind: 'you', label: 'You send Prompt D1 (Case in)', html: '<em>"Present me a realistic primary-care case. Vital signs and observables only. No diagnosis hints."</em>' },
+        { kind: 'ai',  label: 'AI presents the case', html: '<em>52F, BMI 31, recent long-haul flight, mild SOB on stairs, HR 92, SpO2 96%, CRP normal, no fever, mild calf tenderness on left.</em>' },
+        { kind: 'you', label: 'You commit to a top-3 DDx', html: '"PE / deconditioning / anaemia." (You write it before any investigation.)' },
+        { kind: 'ai',  label: 'AI returns discriminating tests', html: 'Wells score + d-dimer for PE, Hb for anaemia, peak flow for occult asthma. <em>Tells you which one rules in/out fastest at your DDx priors. Doesn\'t reveal the case.</em>' },
+        { kind: 'you', label: 'You commit to a treatment / next action', html: '"Wells = 6, refer same-day for CTPA." AI reveals: <strong>RISKY — your reasoning is right, but you anchored on PE before computing Wells. The case is PE — but you\'d have referred a low-Wells patient with the same urgency.</strong>' },
+        { kind: 'you', label: 'After 2 weeks (~30h, ~25 cases)', html: 'You have a pattern library of 25 cases, a list of your 3 recurring anchors, and a faster, less anchored first-pass reflex. <em>Not specialty-grade. Sharper than last week.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack Your Case Material', time: '~1 hr setup', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Skip Deep Research mode.</strong> You\'re training pattern recognition on real cases, not surveying literature. The case archive is the source.',
+        tagsHtml: '<span class="tag tag-tool">NotebookLM</span> <span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tip">Anonymise your log</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Open the Case Round', time: 'Hour 0–1', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: 'Frames the AI as case-method attending, not textbook.', prompt: { key: 'open', label: 'Opening Prompt' }, after: 'Write the 3 cognitive errors most common at your level in your physical notebook. They are what every case is also testing.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'Cases In → Differential → Decision → Reveal', time: 'Hour 1–24 (or block of cases)', tracks: ['sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Use sequentially. Diagnostic learning is forced commitment + reasoning critique, not pattern-matching against a key.',
+        steps: [
+          { num: 'D1', title: 'Case in', desc: 'AI presents a realistic case — observables only, no hints.', prompt: { key: 'd1', label: 'Prompt D1 · Case in' }},
+          { num: 'D2', title: 'Commit a top-3 differential', desc: 'I commit before any investigation. AI returns discriminating tests — not the answer.', prompt: { key: 'd2', label: 'Prompt D2 · Differential' }},
+          { num: 'D3', title: 'Commit a decision, then reveal', desc: 'Investigation result + my treatment / action. AI grades the reasoning trace, not the answer.', prompt: { key: 'd3', label: 'Prompt D3 · Decision' }},
+          { num: 'D4', title: 'Pattern library', desc: 'After 5 cases, surface my recurring anchor / error pattern.', prompt: { key: 'd4', label: 'Prompt D4 · Pattern' }},
+          { num: 'D5', title: 'Zebras', desc: 'Atypical presentations of common conditions; typical presentations of rare ones.', prompt: { key: 'd5', label: 'Prompt D5 · Zebras' }}
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Case Rounds Mode — Reasoning Verdicts', time: 'Daily during block', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'PASS / FAIL replaced with <strong style="color:var(--green);">Reasonable</strong> · <strong style="color:var(--gold);">Risky</strong> · <strong style="color:var(--accent);">Wrong</strong>, applied to the *reasoning trace*, not the final call.',
+        steps: [
+          { num: '01', title: 'Switch to Case Rounds Mode', prompt: { key: 'rounds', label: 'Case Rounds Mode' }},
+          { num: '02', title: 'The Cases Rule', bullets: ['Commit a DDx and a decision in writing first — never read AI feedback before','Receive Reasonable / Risky / Wrong on the reasoning trace, with the specific move that earned the verdict','When you hit Risky / Wrong, run the Pattern Correction prompt before the next case','Mark every cognitive error in your case log; patterns reveal blind spots','Every 5 cases, run D4 (Pattern library)'] },
+          { num: '03', title: 'Mid-block correction', prompt: { key: 'corr', label: 'Pattern Correction · Every 5 cases' }},
+          { num: '04', title: 'Stuck? Ask the attending what you\'re missing', prompt: { key: 'stuck', label: 'Stuck Prompt' }},
+          { num: '05', title: 'High-pressure scenario', prompt: { key: 'scen', label: 'Pressure Case' }}
+        ]},
+      { id: 'p4', num: 'PHASE 4', title: 'Consolidation — Lock the Pattern Library', time: 'Final week', tracks: ['standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Generate your Diagnostic Map', prompt: { key: 'cons', label: 'Diagnostic Map Prompt' }},
+          { num: '02', title: 'Capture the anchors', bullets: ['Add recurring anchors to a permanent error log — these are your blind spots','Note which atypical presentations you can now recognise cold','Mark this stack as done in Saved Stacks once you can run a fresh case from D1 to D3 without reaching for notes'] },
+          { num: '03', title: 'Spaced cases', bullets: ['Re-run a fresh case set: Day 1 → Day 7 → Day 30','Each session: commit DDx and decision cold, then run D3','Run a Zebra (D5) every 30 days — atypical patterns decay fastest'] }
+        ]},
+      { id: 'audio', num: 'BONUS', title: 'NotebookLM Case Audio', time: 'Listen during commutes', tracks: ['standard','block','sustained'], type: 'audio',
+        intro: 'Use NotebookLM <strong style="color:var(--text);">Audio Overview → Customize</strong> to turn your case stack into passive-listen audio for warm-ups before clinic / triage.' }
+    ],
+    audioTabs: [
+      { id: 'audio-debate', label: 'Senior disagreement', promptKey: 'audio_debate', promptLabel: 'Audio · Senior disagreement' },
+      { id: 'audio-recall', label: 'Case round',          promptKey: 'audio_recall', promptLabel: 'Audio · Case round' },
+      { id: 'audio-traps',  label: 'Cognitive errors',    promptKey: 'audio_traps',  promptLabel: 'Audio · Cognitive errors' },
+      { id: 'audio-deep',   label: 'Pattern library',     promptKey: 'audio_deep',   promptLabel: 'Audio · Pattern library' }
+    ],
+    templates: {
+      open: `You are {{ROLE}}, running case rounds with me on: {{TOPIC}}.
+
+I am working toward: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded a case archive, the canonical reference, an atlas of atypical presentations, my own case log, and one source on cognitive errors in this field.
+
+Your job is NOT to teach me the textbook, give me lookup tables, or reveal answers early. Your job is to:
+1. Present cases as observables only — no diagnosis hints
+2. Force me to commit a top-3 differential and a decision in writing
+3. Reveal the case only after I commit — and grade my reasoning trace, not my answer
+4. Surface my recurring anchors and cognitive errors after 5 cases
+
+Begin by telling me: what are the 3 cognitive errors most common at the {{DEPTH}} level when working in {{TOPIC}}, and what each one looks like in a real case?`,
+      d1: `Present me a realistic case in {{TOPIC}}.
+
+Rules for the case:
+- Vital signs / symptoms / observables only
+- No diagnosis hints, no leading details, no "by the way"
+- Calibrate difficulty to {{DEPTH}} level — most cases should be common presentations; some should be atypical presentations of common conditions
+- After the case, ask me to commit a top-3 differential before any investigation
+
+Do not reveal the answer until I commit and run D2 / D3.`,
+      d2: `I have committed my top-3 differential. (I will paste it.)
+
+Tell me, for each item on my differential:
+- The single most discriminating investigation that would rule it in or out fastest
+- The pre-test probability the case as presented should give it (rough, not precise)
+- What an unhelpful or anchoring investigation choice would look like at my level
+
+Do not reveal the actual diagnosis. Wait for D3.`,
+      d3: `Given the investigation result I'll paste, I now commit to a treatment / next action.
+
+When I share my decision:
+1. Reveal the actual case
+2. Grade my <em>reasoning trace</em> — not my answer — as <strong>Reasonable</strong> / <strong>Risky</strong> / <strong>Wrong</strong>, with the specific move that earned the verdict
+3. Identify the cognitive error (if any) my reasoning trace shows — anchoring, premature closure, availability, etc.
+4. Tell me the move a senior {{ROLE_NOUN}} would have made differently — and why
+
+A correct answer with broken reasoning earns Risky, not Reasonable.`,
+      d4: `Across my last 5 cases on {{TOPIC}}, what's the recurring anchor or cognitive error pattern in my reasoning?
+
+Give me:
+1. The pattern — quoted from my reasoning traces
+2. Which Bordage-style cognitive error it maps to
+3. The specific investigation move I should add as a default to break the anchor
+4. Two harder cases that target this exact weakness, ready to run`,
+      d5: `Throw me 3 atypical presentations of common conditions and 2 typical presentations of rare ones in {{TOPIC}}.
+
+For each:
+- Present the case as observables only (D1-style)
+- After I commit a top-3 differential, tell me what made the case atypical / typical-rare
+- Highlight the specific feature most {{DEPTH}}-level practitioners miss
+
+This is pattern-recognition training, not memorisation.`,
+      rounds: `Stop teaching mode. You are now my attending in case rounds on {{TOPIC}}.
+
+Rules:
+- Run D1 → D2 → D3 in order. Never short-circuit. Never reveal early.
+- After D3, return one of: <strong>Reasonable</strong> · <strong>Risky</strong> · <strong>Wrong</strong>, applied to my reasoning trace, with one line of specifics
+- A correct call with broken reasoning is Risky, not Reasonable
+- After 5 cases, run D4 unprompted
+- If I anchor, name it — but make me run the case again before the next one
+
+{{DEPTH_GUIDE}}
+
+Begin with the first case at common-presentation difficulty.`,
+      corr: `Across my last 5 cases on {{TOPIC}}, what's the single recurring decision pattern that's producing Risky / Wrong reasoning verdicts?
+
+Give me:
+1. The pattern (with quoted reasoning traces from my own cases)
+2. The cognitive error it maps to
+3. The one default I should adopt for the next 5 cases to break the pattern`,
+      stuck: `I'm stuck on {{TOPIC}}. Based on the cases so far, what am I missing?
+
+Specifically:
+1. Which presentation pattern have I been mis-matching to the wrong differential?
+2. What single discriminating investigation, if I added it as a default, would unlock cleaner reasoning toward {{GOAL_TEXT}}?
+3. Which atypical presentation have I under-trained on relative to its frequency?
+
+Then throw me one case that targets the gap directly.`,
+      scen: `Give me 3 high-pressure case scenarios in {{TOPIC}} — the kind of presentation that mimics the constraints of {{AUDIENCE}}.
+
+For each:
+- The full case as observables (D1-style), with time pressure and stakes
+- The hand-wave call a tired {{ROLE_NOUN}} makes
+- The competent call
+- The excellent call that catches the trap
+
+Then put me in Scenario 1 — present the case, force a DDx + decision, and run D3.`,
+      cons: `Generate a one-page Diagnostic Map for {{TOPIC}}:
+1. The top 5 presentations I worked through and the discriminating move I built for each
+2. My 3 recurring anchors / cognitive errors — and the new default I'm using to break each
+3. The 3 atypical presentations I now recognise that I didn't on Day 1
+4. The single case type I am still over-confident on (be honest)
+5. My 30-day re-pressure plan: case frequency, atypical cadence, error log review
+
+Format as a printable single-page reference. No fluff.`,
+      audio_debate: `Generate audio of two senior {{ROLE_NOUN}}s disagreeing about a real diagnostic question in {{TOPIC}}, calibrated for {{DEPTH}} level.
+
+They should:
+- Disagree about a specific call from a real case (use one from the uploaded archive)
+- Cite specific findings or evidence
+- Concede when the other has a point
+- End with what each would tell a junior at my level to default to
+
+Tone: attendings post-clinic, not lecturers. {{DEPTH_GUIDE}}`,
+      audio_recall: `Generate audio of two {{ROLE_NOUN}}s walking through 6–8 cases in {{TOPIC}} a learner working toward {{AUDIENCE}} should be able to handle cleanly.
+
+For each case:
+1. Present as observables only
+2. Pause 5 seconds (saying "commit your DDx silently now")
+3. Discuss what a textbook DDx looks like
+4. Discuss what a senior call sounds like
+5. Highlight the trap — anchoring, premature closure, availability
+
+Calibrate to {{DEPTH}} level.`,
+      audio_traps: `Generate audio of two senior {{ROLE_NOUN}}s on the most common cognitive errors in {{TOPIC}} at {{DEPTH}} level.
+
+For each error:
+- Name it (using the cognitive-error literature I uploaded)
+- Describe what it looks like in a real case
+- Why it sounds like good reasoning to the practitioner making it
+- The specific default that breaks the error
+
+Cover 5–7 errors. Tone: attendings around a coffee, not a lecture.`,
+      audio_deep: `Generate an in-depth audio discussion between two senior {{ROLE_NOUN}}s on the patterns inside {{TOPIC}}, calibrated for {{DEPTH}} level working toward {{GOAL_TEXT}}.
+
+Do NOT summarise the textbook. Instead:
+- Discuss the discriminating features experts actually use (vs. what textbooks list)
+- Walk through the judgment calls that aren't in any guideline
+- Reference the atypical-presentation atlas naturally as practitioners would
+- Cover the secret heuristics that show up only after thousands of cases
+
+Use technical vocabulary appropriate to the field.`
+    }
+  },
+
+  // ----------------------------------------------------------------
+  // EXPLORE — pre-Mode for undecided users
+  // ----------------------------------------------------------------
+  explore: {
+    label: 'Explore',
+    emoji: '🧭',
+    desc: 'Undecided — figure out what\'s worth committing 48h to',
+    defaultTrack: 'crash',
+    what48h: 'Not for learning yet — for *choosing*. ~90 minutes that converts vague curiosity into a topic + Mode + Time Track you can actually run with.',
+    depthLabels: { beginner: 'Curious', intermediate: 'Browsing', expert: 'Narrowing', professional: 'Committing' },
+    goalOptions: [
+      { val: 'explore', label: 'Explore' },
+      { val: 'decide',  label: 'Pick one' }
+    ],
+    presets: [
+      { id: 'explore', icon: '🧭', label: 'Generic explore',  role: 'a polymath thinking-partner who helps people pick what to learn next', audience: 'figuring out what to commit 48 hours to', depth: 'intermediate', goal: 'explore', context: 'I have several things pulling at me and don\'t know which to commit to. Help me see the underlying shape, then recommend a Mode and Time Track.' },
+      { id: 'blank',   icon: '○',  label: 'Blank',            role: '', audience: '', depth: 'intermediate', goal: 'explore', context: '' }
+    ],
+    sourceChecklist: [
+      { strong: 'A list of 5–10 things that pulled you in', text: '— articles, ideas, questions, projects, anything' },
+      { strong: '3 favourite past learnings', text: '— things you\'ve genuinely enjoyed learning before' },
+      { strong: 'Your time + energy constraints', text: '— how many hours per week, when, with what focus' },
+      { strong: '(Optional) 1 anti-topic', text: '— something you have *no* interest in, as a calibrating contrast' }
+    ],
+    walkthrough: {
+      title: 'Example: 90 minutes from "I want to learn something" to a committed topic',
+      lede: 'A Crash-track Explore session for an undecided learner. Outcome: a chosen topic, a recommended Mode, and a configured stack ready to run.',
+      steps: [
+        { kind: 'you', label: 'You upload to Claude', html: 'A list of 8 things that have pulled you in this month (articles, podcast moments, conversations), 3 favourite past learnings (with what you loved about them), your weekly time budget, and one thing that bores you.' },
+        { kind: 'you', label: 'You configure', html: 'Mode: <strong>Explore</strong>  ·  Track: <strong>Crash · 90 min</strong>  ·  Goal: Explore' },
+        { kind: 'you', label: 'You send the Curiosity Scan', html: '<em>"What underlying questions are these 8 things really asking? Which 2–3 cluster into something I\'d want to spend 48h on?"</em>' },
+        { kind: 'ai',  label: 'AI returns 3 clusters', html: 'Cluster A: how reasoning under uncertainty actually works (Bayesian, expected-value, base rates) · Cluster B: how to make things people return to (taste, craft, voice) · Cluster C: how political settlements break (institutional decay, late-republic dynamics). <em>You feel A is the live one.</em>' },
+        { kind: 'you', label: 'You run Smallest Real Thing', html: '<em>"For Cluster A, what\'s the smallest 90-minute thing I could try that tells me whether to commit 48h?"</em>' },
+        { kind: 'ai',  label: 'AI returns the test', html: 'Read 3 short Tetlock pieces, work through one base-rate problem in your own life, write 200 words on a real decision you\'re currently making. <em>If energising → commit. If meh → try Cluster B.</em>' },
+        { kind: 'you', label: 'You return committed', html: 'You did the 90-minute test. It was electric. You re-run Topic Shape.' },
+        { kind: 'ai',  label: 'AI recommends Mode', html: '<strong>Recommended: Exam Mode, Standard 48h.</strong> Reason: this is a declarative-knowledge body (Bayesian reasoning) where active recall + expert disagreements are the core moves. Pre-fills topic, role, audience, depth, goal. <em>You click "Switch to Exam Mode" and you\'re running.</em>' }
+      ]
+    },
+    phases: [
+      { id: 'p0', num: 'PHASE 0', title: 'Stack What\'s Pulling You', time: '~15 min', tracks: ['crash','sprint','standard','block','sustained'], open: true, type: 'checklist',
+        callout: '<strong>Don\'t over-curate.</strong> The point is to bring what already has pull. Half-formed is fine — that\'s the data.',
+        tagsHtml: '<span class="tag tag-tool">Claude.ai</span> <span class="tag tag-tip">Bring the messy</span>' },
+      { id: 'p1', num: 'PHASE 1', title: 'Open the Scan', time: '5 min', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        steps: [
+          { num: '01', title: 'Send this as your first message', desc: 'Frames the AI as a thinking-partner for choosing, not for teaching.', prompt: { key: 'open', label: 'Opening Prompt' }, after: 'You\'re not here to learn yet. You\'re here to choose.' }
+        ]},
+      { id: 'p2', num: 'PHASE 2', title: 'Curiosity Scan → Smallest Real Thing → Topic Shape', time: '~60 min', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Run sequentially. The output of E5 is a fully-configured Mode + topic ready to switch into.',
+        steps: [
+          { num: 'E1', title: 'Curiosity scan', desc: 'Cluster what\'s pulling you into 2–3 candidate topics.', prompt: { key: 'e1', label: 'Prompt E1 · Curiosity scan' }},
+          { num: 'E2', title: 'Taste mapping', desc: 'What pattern across past learnings tells you what to commit to next.', prompt: { key: 'e2', label: 'Prompt E2 · Taste mapping' }},
+          { num: 'E3', title: 'Smallest real thing', desc: 'A 90-minute test for each candidate — does it actually energise you?', prompt: { key: 'e3', label: 'Prompt E3 · Smallest real thing' }},
+          { num: 'E4', title: 'Topic shape', desc: 'Once chosen, which of the 6 Modes (Exam / Skill / Creative / Project / Socratic / Diagnostic) fits the topic\'s shape.', prompt: { key: 'e4', label: 'Prompt E4 · Topic shape' }},
+          { num: 'E5', title: 'Commit', desc: 'Generate the filled-in {topic, role, audience, depth, goal, context} for the recommended Mode.', prompt: { key: 'e5', label: 'Prompt E5 · Commit' }, after: 'After E5, switch Mode in the picker above. The page will re-render — your fields are already filled.' }
+        ]},
+      { id: 'p3', num: 'PHASE 3', title: 'Hand off — Switch into the Recommended Mode', time: 'When ready', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
+        intro: 'Explore Mode\'s job is done once you have a topic and a Mode. Switch and run.',
+        steps: [
+          { num: '01', title: 'Switch Mode using the picker above', bullets: ['Click the recommended Mode in the picker (top of page)','The Time Track defaults to that Mode\'s recommended track — change if you want','Your topic / role / audience / depth / goal / context fields stay filled from E5','Run Phase 1 (Opening Prompt) of the new Mode'] }
+        ]}
+    ],
+    audioTabs: [],
+    templates: {
+      open: `You are a polymath thinking-partner. I'm trying to figure out what to spend the next 48 hours of deliberate learning on. I haven't committed to a topic yet — that's the whole point of this session.
+
+I am working toward: {{AUDIENCE}}.
+My current level: {{DEPTH}}. {{DEPTH_GUIDE}}
+My primary goal: {{GOAL_TEXT}}.
+
+{{CONTEXT_BLOCK}}
+
+I have uploaded a list of things that have pulled at me recently, my favourite past learnings, my time and energy constraints, and (optionally) one thing that bores me as a contrast.
+
+Your job is NOT to teach me anything yet. Your job is to:
+1. Cluster what's pulling at me into 2–3 candidate topics, naming the underlying question each is really asking
+2. Help me design a 90-minute test for each — the smallest real thing I could try that tells me whether to commit 48h
+3. After I run the test, recommend which of the 6 Modes (Exam / Skill / Creative / Project / Socratic / Diagnostic) fits the topic's shape — and why
+4. Generate the filled-in stack configuration for the recommended Mode so I can switch and run immediately
+
+Begin with: what 2–3 underlying questions do the things I uploaded actually share? Cluster them.`,
+      e1: `Look at the 5–10 things I've uploaded that have pulled at me lately.
+
+Don't take them at face value. Ask: what underlying questions are these *really* asking?
+
+Cluster them into 2–3 candidate topics. For each cluster:
+- The underlying question, in one sentence
+- Which uploaded items belong to it
+- The shape of the topic (declarative knowledge / skill / creative / project / dialogue / casework)
+- A one-line case for committing 48h to it
+- A one-line reason it might *not* be the right one for me right now
+
+Calibrate to my time and energy constraints. Be honest about which cluster has the most pull.`,
+      e2: `Look at the 3 favourite past learnings I uploaded — and what I told you I loved about each.
+
+Find the pattern. Specifically:
+1. The kind of *learning experience* that energises me (cramming for mastery vs. drilling a skill vs. making something vs. dialogue vs. casework)
+2. The kind of *output* that gives me satisfaction (a passed exam, a shipped artifact, a held conversation, a written piece, a sharper reflex)
+3. What my anti-topic (if I gave one) tells you I should avoid baking in
+
+Match this against the candidate clusters from E1. Which cluster best fits my pattern of past pull? Be willing to disagree with me.`,
+      e3: `For each of the 2–3 candidate topics from E1, design the smallest real thing I could try in 90 minutes — something that genuinely tests whether I'd want to commit 48h.
+
+For each:
+- The 90-minute test (specific, doable today, requires no setup beyond what I already have)
+- What "this is energising" looks like — in observable terms, not feelings
+- What "this is meh" looks like
+- What I should do at each outcome
+
+The test must put the topic under real load — not "read about it." Make me *do* something with each candidate.`,
+      e4: `I've run the test and chosen {{TOPIC}}. Now tell me which of the 6 Modes fits the shape of this topic, and why.
+
+Recommend ONE Mode from: <strong>Exam</strong> (declarative mastery, exam-shape) · <strong>Skill</strong> (motor / language / artistic skill) · <strong>Creative</strong> (writing / design / composition) · <strong>Project</strong> (build & ship) · <strong>Socratic</strong> (humanities / dialogue) · <strong>Diagnostic</strong> (casework / triage).
+
+Output:
+1. Recommended Mode
+2. The shape-fit reason in one paragraph
+3. The recommended Time Track for me given my constraints
+4. The 1–2 risks of using a different Mode for this topic
+
+Don't hedge. Pick one.`,
+      e5: `I'll commit to {{TOPIC}} in the Mode you recommended. Generate the stack configuration I should paste into the page.
+
+Output exactly these fields, ready to copy:
+1. <strong>Topic:</strong> (one specific phrase, not a category)
+2. <strong>Role:</strong> (the AI plays this role)
+3. <strong>Audience / I'm learning for:</strong> (the end I'm working toward)
+4. <strong>Depth:</strong> (Beginner / Intermediate / Expert / Pro-Grade — pick one)
+5. <strong>Goal:</strong> (Master / Exam / Decide / Present / Build / Perform / Create / Diagnose — pick one consistent with the Mode)
+6. <strong>Context:</strong> (3–5 sentences with my background, deadline, and the specific shape of what I want from this session)
+
+After listing them, tell me: switch Mode in the picker at the top. The page re-renders. Run Phase 1 (Opening Prompt) of the new Mode.`,
+      audio_debate: '', audio_recall: '', audio_traps: '', audio_deep: ''
+    }
+  }
+
+  };  // end of MODES
+
+  // ============================================================
+  // DEPTH GUIDANCE (interpolated into all templates)
+  // ============================================================
+  const DEPTH_GUIDANCE = {
+    beginner: 'Use plain language and simple examples. Assume I don\'t know jargon — define terms when you use them. Build up from first principles.',
+    intermediate: 'Assume I know the fundamentals. Skip basic definitions but explain the deeper "why" behind concepts.',
+    expert: 'Assume strong working knowledge. Skip basics entirely. Focus on edge cases, tradeoffs, and second-order effects.',
+    professional: 'Assume professional-grade understanding. Use field-specific terminology freely. Focus on the rigour and nuance that separate experts from masters.'
+  };
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function getRoleNoun(role) {
+    if (!role) return 'expert';
+    const cleaned = role.toLowerCase()
+      .replace(/^(a |an |the )/, '')
+      .replace(/^(senior |staff |principal |chief |head of |lead )/, '');
+    return cleaned.split(/[ ,.]+/)[0] || 'expert';
+  }
+
+  function buildResolved() {
+    const m = MODES[state.mode] || MODES.exam;
+    const topic = state.topic.trim() || '[your topic]';
+    const role = state.role.trim() || 'an expert practitioner in this field';
+    const audience = state.audience.trim() || 'genuinely mastering this topic';
+    const context = state.context.trim();
+    const contextBlock = context
+      ? `Additional context I want you to factor in:\n${context}`
+      : '';
+    const goalText = (m.goalText && m.goalText[state.goal]) || GLOBAL_GOAL_TEXT[state.goal] || GLOBAL_GOAL_TEXT.master;
+    const trackText = (TRACKS[state.track] && TRACKS[state.track].summary) || '';
+
+    return {
+      TOPIC: topic,
+      ROLE: role,
+      ROLE_NOUN: getRoleNoun(role),
+      AUDIENCE: audience,
+      DEPTH: state.depth,
+      DEPTH_GUIDE: DEPTH_GUIDANCE[state.depth] || '',
+      GOAL_TEXT: goalText,
+      TRACK: trackText,
+      CONTEXT_BLOCK: contextBlock
+    };
+  }
+
+  function fillTemplate(tpl) {
+    const r = buildResolved();
+    return tpl
+      .replaceAll('{{TOPIC}}', r.TOPIC)
+      .replaceAll('{{ROLE}}', r.ROLE)
+      .replaceAll('{{ROLE_NOUN}}', r.ROLE_NOUN)
+      .replaceAll('{{AUDIENCE}}', r.AUDIENCE)
+      .replaceAll('{{DEPTH}}', r.DEPTH)
+      .replaceAll('{{DEPTH_GUIDE}}', r.DEPTH_GUIDE)
+      .replaceAll('{{GOAL_TEXT}}', r.GOAL_TEXT)
+      .replaceAll('{{TRACK}}', r.TRACK)
+      .replaceAll('{{CONTEXT_BLOCK}}', r.CONTEXT_BLOCK);
+  }
+
+  function highlightedHtml(tpl) {
+    const r = buildResolved();
+    const tokens = [
+      { key: '{{TOPIC}}', val: r.TOPIC, empty: !state.topic.trim() },
+      { key: '{{ROLE}}', val: r.ROLE, empty: !state.role.trim() },
+      { key: '{{ROLE_NOUN}}', val: r.ROLE_NOUN, empty: !state.role.trim() },
+      { key: '{{AUDIENCE}}', val: r.AUDIENCE, empty: !state.audience.trim() },
+      { key: '{{DEPTH}}', val: r.DEPTH, empty: false },
+      { key: '{{DEPTH_GUIDE}}', val: r.DEPTH_GUIDE, empty: false },
+      { key: '{{GOAL_TEXT}}', val: r.GOAL_TEXT, empty: false },
+      { key: '{{TRACK}}', val: r.TRACK, empty: false },
+      { key: '{{CONTEXT_BLOCK}}', val: r.CONTEXT_BLOCK, empty: !r.CONTEXT_BLOCK }
+    ];
+
+    let parts = [tpl];
+    tokens.forEach(t => {
+      const next = [];
+      parts.forEach(part => {
+        if (typeof part === 'string') {
+          const segs = part.split(t.key);
+          segs.forEach((seg, i) => {
+            next.push(seg);
+            if (i < segs.length - 1) {
+              next.push({ token: true, val: t.val, empty: t.empty });
+            }
+          });
+        } else next.push(part);
+      });
+      parts = next;
+    });
+
+    return parts.map(p => {
+      if (typeof p === 'string') return escapeHtml(p);
+      if (!p.val) return '';
+      const cls = p.empty ? 'ph ph-empty' : 'ph';
+      return `<span class="${cls}">${escapeHtml(p.val)}</span>`;
+    }).join('');
+  }
+
+  // ============================================================
+  // PROTOCOL RENDER (Mode + Track aware)
+  // ============================================================
+  function activeMode() { return MODES[state.mode] || MODES.exam; }
+
+  function trackIncludesPhase(track, phase) {
+    return phase.tracks && phase.tracks.indexOf(track) !== -1;
+  }
+
+  function renderModePicker() {
+    const wrap = document.getElementById('modeGrid');
+    if (!wrap) return;
+    const order = ['explore','exam','skill','creative','project','socratic','diagnostic'];
+    wrap.innerHTML = order.map(key => {
+      const m = MODES[key]; if (!m) return '';
+      const active = key === state.mode ? ' active' : '';
+      return `<button type="button" class="mode-btn${active}" data-mode="${key}" title="${escapeHtml(m.desc)}"><span class="mode-emoji">${m.emoji}</span><span>${escapeHtml(m.label)}</span></button>`;
+    }).join('');
+  }
+
+  function renderTrackSeg() {
+    document.querySelectorAll('#trackSeg .seg-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.val === state.track);
+    });
+    const w = document.getElementById('what48hText');
+    if (w) w.textContent = activeMode().what48h;
+  }
+
+  function renderPresets() {
+    const wrap = document.getElementById('quickPresets');
+    if (!wrap) return;
+    const presets = activeMode().presets || [];
+    wrap.innerHTML = presets.map(p =>
+      `<button type="button" class="preset-btn" data-preset="${p.id}"><span class="icon">${p.icon}</span>${escapeHtml(p.label)}</button>`
+    ).join('');
+  }
+
+  function renderDepthSeg() {
+    const m = activeMode();
+    const wrap = document.getElementById('depthSeg');
+    if (!wrap) return;
+    const keys = ['beginner','intermediate','expert','professional'];
+    wrap.innerHTML = keys.map(k => {
+      const active = k === state.depth ? ' active' : '';
+      return `<button type="button" class="seg-btn${active}" data-val="${k}">${escapeHtml(m.depthLabels[k] || k)}</button>`;
+    }).join('');
+  }
+
+  function renderGoalSeg() {
+    const m = activeMode();
+    const wrap = document.getElementById('goalSeg');
+    if (!wrap) return;
+    const opts = m.goalOptions || [];
+    // If current goal isn't in this mode's options, fall back to the first
+    if (!opts.some(o => o.val === state.goal)) {
+      state.goal = opts.length ? opts[0].val : 'master';
+    }
+    wrap.innerHTML = opts.map(o => {
+      const active = o.val === state.goal ? ' active' : '';
+      return `<button type="button" class="seg-btn${active}" data-val="${o.val}">${escapeHtml(o.label)}</button>`;
+    }).join('');
+  }
+
+  // Active walkthrough index — for the cycle button
+  let walkthroughIdx = 0;
+  function renderWalkthrough() {
+    const wrap = document.getElementById('walkthrough');
+    if (!wrap) return;
+    // Build an array: active mode's walkthrough first, then the others in order
+    const order = ['exam','skill','creative','project','socratic','diagnostic','explore'];
+    const seq = [activeMode().walkthrough].concat(
+      order.filter(k => k !== state.mode).map(k => MODES[k] && MODES[k].walkthrough).filter(Boolean)
+    );
+    const w = seq[walkthroughIdx % seq.length];
+    if (!w) { wrap.innerHTML = ''; return; }
+    const stepsHtml = (w.steps || []).map(s =>
+      `<div class="walk-step ${s.kind}"><div class="walk-step-label">${escapeHtml(s.label)}</div><div class="content">${s.html}</div></div>`
+    ).join('');
+    wrap.innerHTML = `<h3>${escapeHtml(w.title)}</h3><p class="lede">${w.lede}</p>${stepsHtml}`;
+  }
+
+  function renderProtocol() {
+    const m = activeMode();
+    const container = document.getElementById('protocolContainer');
+    if (!container) return;
+    const phases = (m.phases || []).filter(p => trackIncludesPhase(state.track, p));
+    const html = phases.map(phase => {
+      const openCls = phase.open ? ' open' : '';
+      const headerHtml = `<div class="phase-header" onclick="togglePhase(this)"><div class="phase-num">${escapeHtml(phase.num)}</div><div class="phase-title">${escapeHtml(phase.title)}</div><div class="phase-time">${escapeHtml(phase.time)}</div><div class="phase-toggle">▼</div></div>`;
+      let bodyHtml = '<div class="phase-body">';
+      if (phase.callout) bodyHtml += `<div class="callout">${phase.callout}</div>`;
+      if (phase.intro) bodyHtml += `<p style="font-size:0.9rem;color:var(--muted);margin-bottom:16px;">${phase.intro}</p>`;
+      if (phase.type === 'checklist') {
+        bodyHtml += `<h4 style="font-size:1rem;color:var(--text);margin:14px 0 8px;">Source checklist for <span id="topicMirror" class="ph ph-empty">your topic</span></h4>`;
+        bodyHtml += `<div class="upload-list">`;
+        (m.sourceChecklist || []).forEach((item, idx) => {
+          const cid = `up_${state.mode}_${idx}`;
+          bodyHtml += `<div class="upload-list-item"><input type="checkbox" id="${cid}"><label for="${cid}"><strong>${item.strong}</strong> ${item.text}</label></div>`;
+        });
+        bodyHtml += `</div>`;
+        if (phase.tagsHtml) bodyHtml += `<p style="font-size:0.88rem;color:var(--muted);margin-top:14px;">${phase.tagsHtml}</p>`;
+      } else if (phase.type === 'steps') {
+        bodyHtml += `<ul class="steps">` + (phase.steps || []).map(step => {
+          let stepHtml = `<li><div class="step-num">${escapeHtml(step.num)}</div><div class="step-content"><h4>${step.title}</h4>`;
+          if (step.desc) stepHtml += `<p>${step.desc}</p>`;
+          if (step.prompt) {
+            stepHtml += `<div class="prompt-box"><div class="prompt-header"><span class="prompt-label">${escapeHtml(step.prompt.label)}</span><button class="copy-btn" data-target="${escapeHtml(step.prompt.key)}">Copy</button></div><div class="prompt-text" data-prompt="${escapeHtml(step.prompt.key)}"></div></div>`;
+          }
+          if (step.bullets) stepHtml += `<ul>` + step.bullets.map(b => `<li>${b}</li>`).join('') + `</ul>`;
+          if (step.after) stepHtml += `<p style="margin-top:10px;font-size:0.88rem;color:var(--muted);">${step.after}</p>`;
+          stepHtml += `</div></li>`;
+          return stepHtml;
+        }).join('') + `</ul>`;
+      } else if (phase.type === 'audio') {
+        const tabs = m.audioTabs || [];
+        bodyHtml += `<div class="tab-row" id="audioTabs">` + tabs.map((t, i) =>
+          `<button type="button" class="tab-btn${i===0?' active':''}" data-tab="${t.id}">${escapeHtml(t.label)}</button>`
+        ).join('') + `</div>`;
+        bodyHtml += tabs.map((t, i) =>
+          `<div class="tab-content${i===0?' active':''}" id="${t.id}"><div class="prompt-box"><div class="prompt-header"><span class="prompt-label">${escapeHtml(t.promptLabel)}</span><button class="copy-btn" data-target="${escapeHtml(t.promptKey)}">Copy</button></div><div class="prompt-text" data-prompt="${escapeHtml(t.promptKey)}"></div></div></div>`
+        ).join('');
+      }
+      bodyHtml += `</div>`;
+      return `<div class="phase${openCls}">${headerHtml}${bodyHtml}</div>`;
+    }).join('');
+    container.innerHTML = html;
+  }
+
+  // ============================================================
+  // RENDER
+  // ============================================================
+  function render(flash = false) {
+    const m = activeMode();
+    const tm = document.getElementById('topicMirror');
+    if (tm) {
+      if (state.topic.trim()) {
+        tm.textContent = state.topic;
+        tm.classList.remove('ph-empty');
+      } else {
+        tm.textContent = 'your topic';
+        tm.classList.add('ph-empty');
+      }
+    }
+    const tpls = m.templates || {};
+    document.querySelectorAll('[data-prompt]').forEach(el => {
+      const tpl = tpls[el.dataset.prompt];
+      if (!tpl) { el.innerHTML = '<em style="color:var(--muted);">(no prompt for this Mode)</em>'; el.dataset.copyText = ''; return; }
+      el.innerHTML = highlightedHtml(tpl);
+      el.dataset.copyText = fillTemplate(tpl);
+    });
+
+    renderSummary();
+
+    if (flash) {
+      document.querySelectorAll('.ph').forEach(el => {
+        el.classList.add('flash');
+        setTimeout(() => el.classList.remove('flash'), 600);
+      });
+    }
+    saveState();
+  }
+
+  function renderSummary() {
+    const s = document.getElementById('configSummary');
+    if (!s) return;
+    const m = activeMode();
+    const t = TRACKS[state.track] || TRACKS.standard;
+    const chips = [];
+    chips.push(`<span class="summary-chip" style="border-color:var(--accent);color:var(--accent);"><strong>${m.emoji} ${m.label}</strong></span>`);
+    chips.push(`<span class="summary-chip" style="border-color:var(--green);color:var(--green);"><strong>${escapeHtml(t.label.split(' · ')[0])}</strong></span>`);
+    if (state.topic.trim()) {
+      chips.push(`<span class="summary-chip"><strong>topic</strong> ${escapeHtml(state.topic.slice(0, 40))}${state.topic.length > 40 ? '…' : ''}</span>`);
+    }
+    chips.push(`<span class="summary-chip"><strong>${state.depth}</strong> · ${state.goal}</span>`);
+    s.innerHTML = chips.join('');
+  }
+
+  // ============================================================
+  // FULL RE-RENDER (after Mode or Track change)
+  // ============================================================
+  function rerenderAll(flash = false) {
+    renderModePicker();
+    renderTrackSeg();
+    renderPresets();
+    renderDepthSeg();
+    renderGoalSeg();
+    renderProtocol();
+    renderWalkthrough();
+    render(flash);
+    applyTrack();
+  }
+
+  // ============================================================
+  // TIME TRACK (replaces MVS)
+  // ============================================================
+  function applyTrack() {
+    // The protocol re-render already filtered phases by track.
+    // This function exists to mark the "essential" Crash subset visually.
+    document.querySelectorAll('.phase').forEach(p => p.classList.remove('dimmed', 'essential'));
+    if (state.track !== 'crash') return;
+    const m = activeMode();
+    const phases = (m.phases || []).filter(p => trackIncludesPhase(state.track, p));
+    document.querySelectorAll('.phase').forEach((el, idx) => {
+      const ph = phases[idx];
+      if (ph) el.classList.add('essential');
+    });
+  }
+
+  // ============================================================
+  // STATE PERSISTENCE
+  // ============================================================
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function loadState() {
+    // First, try URL hash (shared link)
+    const hash = window.location.hash.slice(1);
+    if (hash.startsWith('s=')) {
+      try {
+        const decoded = JSON.parse(atob(decodeURIComponent(hash.slice(2))));
+        Object.assign(state, decoded);
+        history.replaceState(null, '', window.location.pathname);
+        showToast('Loaded shared stack');
+        return;
+      } catch (e) { /* fall through to localStorage */ }
+    }
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) { Object.assign(state, JSON.parse(raw)); return; }
+      // Migration from v2: load legacy state, default mode/track
+      const legacy = localStorage.getItem(LEGACY_STATE_KEY);
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        Object.assign(state, parsed);
+        state.mode = state.mode || 'exam';
+        // Honour the old MVS flag if set
+        const mvs = localStorage.getItem(LEGACY_MVS_KEY);
+        state.track = (mvs === '1') ? 'crash' : 'standard';
+      }
+    } catch (e) {}
+  }
+
+  function applyStateToInputs() {
+    // Make sure mode & track are valid
+    if (!MODES[state.mode]) state.mode = 'exam';
+    if (!TRACKS[state.track]) state.track = activeMode().defaultTrack || 'standard';
+    document.getElementById('topicInput').value = state.topic;
+    document.getElementById('roleInput').value = state.role;
+    document.getElementById('audienceInput').value = state.audience;
+    document.getElementById('contextInput').value = state.context;
+  }
+
+  // ============================================================
+  // SAVED STACKS
+  // ============================================================
+  function getSavedStacks() {
+    try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function setSavedStacks(arr) {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(arr));
+    renderSavedStacks();
+  }
+  function renderSavedStacks() {
+    const arr = getSavedStacks();
+    const wrap = document.getElementById('savedPresets');
+    if (!wrap) return;
+    if (arr.length === 0) {
+      wrap.innerHTML = '<div style="font-size:12px;color:var(--muted);font-style:italic;">No saved stacks yet — fill in the form and click Save</div>';
+      return;
+    }
+    wrap.innerHTML = arr.map((stack, i) => {
+      const m = MODES[(stack.state && stack.state.mode) || 'exam'] || MODES.exam;
+      return `
+      <div class="saved-preset" onclick="loadSavedStack(${i})">
+        <span style="opacity:0.7;font-size:0.9em;">${m.emoji}</span> ${escapeHtml(stack.name)}
+        <span class="x" onclick="event.stopPropagation();deleteSavedStack(${i})" aria-label="Delete">×</span>
+      </div>
+    `;}).join('');
+  }
+  function saveCurrentStack() {
+    if (!state.topic.trim()) {
+      showToast('Add a topic first');
+      return;
+    }
+    const name = prompt('Name this stack:', state.topic.slice(0, 30));
+    if (!name) return;
+    const arr = getSavedStacks();
+    arr.push({ name, state: { ...state } });
+    setSavedStacks(arr);
+    showToast('Saved');
+  }
+  function loadSavedStack(i) {
+    const arr = getSavedStacks();
+    if (!arr[i]) return;
+    Object.assign(state, arr[i].state);
+    if (!MODES[state.mode]) state.mode = 'exam';
+    if (!TRACKS[state.track]) state.track = activeMode().defaultTrack || 'standard';
+    applyStateToInputs();
+    rerenderAll(true);
+    showToast('Loaded');
+  }
+  function deleteSavedStack(i) {
+    const arr = getSavedStacks();
+    arr.splice(i, 1);
+    setSavedStacks(arr);
+  }
+
+  // ============================================================
+  // SHARE VIA URL
+  // ============================================================
+  async function shareStack() {
+    if (!state.topic.trim()) {
+      showToast('Add a topic first');
+      return;
+    }
+    try {
+      const encoded = encodeURIComponent(btoa(JSON.stringify(state)));
+      const url = `${window.location.origin}${window.location.pathname}#s=${encoded}`;
+      await navigator.clipboard.writeText(url);
+      showToast('Share link copied');
+    } catch (e) {
+      showToast('Share failed');
+    }
+  }
+
+  // ============================================================
+  // THEME
+  // ============================================================
+  function toggleTheme() {
+    const cur = document.body.dataset.theme;
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.body.dataset.theme = next;
+    localStorage.setItem(THEME_KEY, next);
+    updateThemeButton();
+  }
+  function loadTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) document.body.dataset.theme = saved;
+    updateThemeButton();
+  }
+  function updateThemeButton() {
+    const isDark = document.body.dataset.theme === 'dark';
+    document.getElementById('themeIcon').textContent = isDark ? '☀' : '☾';
+    document.getElementById('themeLabel').textContent = isDark ? 'Light' : 'Dark';
+  }
+
+  // ============================================================
+  // INTERACTIONS — event delegation (so re-rendered DOM stays wired)
+  // ============================================================
+
+  // Mode picker
+  document.addEventListener('click', (e) => {
+    const modeBtn = e.target.closest('.mode-btn[data-mode]');
+    if (modeBtn) {
+      const newMode = modeBtn.dataset.mode;
+      if (!MODES[newMode] || newMode === state.mode) return;
+      state.mode = newMode;
+      // Adopt the mode's default track, unless current track is still valid for this mode
+      state.track = activeMode().defaultTrack || 'standard';
+      // Adopt the mode's first preset's depth/goal as a sensible default if current goal isn't allowed
+      const allowedGoals = (activeMode().goalOptions || []).map(o => o.val);
+      if (!allowedGoals.includes(state.goal) && allowedGoals.length) state.goal = allowedGoals[0];
+      walkthroughIdx = 0;
+      rerenderAll(true);
+    }
+  });
+
+  // Track segmented
+  document.addEventListener('click', (e) => {
+    const seg = e.target.closest('#trackSeg .seg-btn[data-val]');
+    if (seg) {
+      state.track = seg.dataset.val;
+      renderTrackSeg();
+      renderProtocol();
+      render(true);
+      applyTrack();
+    }
+  });
+
+  // Depth segmented
+  document.addEventListener('click', (e) => {
+    const seg = e.target.closest('#depthSeg .seg-btn[data-val]');
+    if (seg) {
+      state.depth = seg.dataset.val;
+      renderDepthSeg();
+      render(true);
+    }
+  });
+
+  // Goal segmented
+  document.addEventListener('click', (e) => {
+    const seg = e.target.closest('#goalSeg .seg-btn[data-val]');
+    if (seg) {
+      state.goal = seg.dataset.val;
+      renderGoalSeg();
+      render(true);
+    }
+  });
+
+  // Preset buttons
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#quickPresets .preset-btn[data-preset]');
+    if (btn) {
+      const presets = activeMode().presets || [];
+      const preset = presets.find(p => p.id === btn.dataset.preset);
+      if (!preset) return;
+      // Preserve mode + track; overlay the preset's field defaults
+      const { id, icon, label, ...fields } = preset;
+      Object.assign(state, fields);
+      // Make sure goal is allowed in current mode
+      const allowedGoals = (activeMode().goalOptions || []).map(o => o.val);
+      if (!allowedGoals.includes(state.goal) && allowedGoals.length) state.goal = allowedGoals[0];
+      applyStateToInputs();
+      renderDepthSeg();
+      renderGoalSeg();
+      render(true);
+    }
+  });
+
+  // Audio tabs
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('#audioTabs .tab-btn[data-tab]');
+    if (tab) {
+      document.querySelectorAll('#audioTabs .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      const target = document.getElementById(tab.dataset.tab);
+      if (target) target.classList.add('active');
+    }
+  });
+
+  // Copy buttons
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.copy-btn[data-target]');
+    if (!btn) return;
+    e.stopPropagation();
+    const targetKey = btn.dataset.target;
+    const promptEl = document.querySelector(`[data-prompt="${targetKey}"]`);
+    if (!promptEl) return;
+    if (!state.topic.trim()) { showToast('Add a topic first'); return; }
+    const text = promptEl.dataset.copyText || promptEl.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      showToast('Copied with current settings');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    } catch { btn.textContent = 'Error'; }
+  });
+
+  // Walkthrough cycle
+  const wcBtn = document.getElementById('walkthroughCycle');
+  if (wcBtn) wcBtn.addEventListener('click', () => { walkthroughIdx++; renderWalkthrough(); });
+
+  // Inputs
+  document.getElementById('topicInput').addEventListener('input', e => { state.topic = e.target.value; render(); });
+  document.getElementById('roleInput').addEventListener('input', e => { state.role = e.target.value; render(); });
+  document.getElementById('audienceInput').addEventListener('input', e => { state.audience = e.target.value; render(); });
+  document.getElementById('contextInput').addEventListener('input', e => { state.context = e.target.value; render(); });
+
+  function toggleConfig(e) {
+    e.stopPropagation();
+    document.getElementById('configPanel').classList.toggle('collapsed');
+  }
+  function togglePhase(header) {
+    header.parentElement.classList.toggle('open');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (msg) t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  // INIT
+  loadTheme();
+  loadState();
+  applyStateToInputs();
+  rerenderAll();
+  renderSavedStacks();
+</script>
+</body>
+</html>

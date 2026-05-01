@@ -1,0 +1,7 @@
+# Personal / private files — not for the public repo
+viva-prep-48hr*.html
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
