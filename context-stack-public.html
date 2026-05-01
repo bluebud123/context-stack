@@ -1255,7 +1255,19 @@
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do I really need 48 hours?</div>
       <div class="faq-a">
-        No. The "48 hours" is a frame that means <em>~48 hours of deliberate work</em>, spread however you want — across two weekends, four evenings, whatever. Use the <strong>MVS Mode</strong> button at the top to compress to ~4-6 hours of just the 3 essential prompts. The full protocol gives you depth; the short version gets you 70% of the value in 10% of the time.
+        No. "48 hours" means <em>48 hours of deliberate work</em>, spread however you want — two weekends, four evenings, whatever. Use the <strong>Time Track</strong> control near the top to scale: <strong>Crash · 4–6h</strong> for essentials only, <strong>Sprint · 12h</strong> for half a weekend, <strong>Standard · 48h</strong> for the full protocol, <strong>Block · 2 weeks</strong> for skills/creative/projects, <strong>Sustained · 60d+</strong> for languages and deep domains.
+      </div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What's a Mode and how do I pick one?</div>
+      <div class="faq-a">
+        A Mode is the <em>shape</em> of your topic. Different topics need different protocols — exam-style PASS/FAIL is right for declarative knowledge but hostile to creative or skill learning. <strong>Exam</strong> for professional exams and interviews. <strong>Skill</strong> for languages, instruments, sport, drawing. <strong>Creative</strong> for writing, design, composition. <strong>Project</strong> for "ship a real artifact." <strong>Socratic</strong> for humanities, philosophy, history. <strong>Diagnostic</strong> for medicine and triage. Not sure? Use <strong>Explore</strong> first — it spends ~90 minutes helping you pick a topic and the right Mode for it.
+      </div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Will I really master something in 48 hours?</div>
+      <div class="faq-a">
+        Depends what you mean by "master" — and that depends on the Mode. <strong>Exam</strong> Mode in 48h gets you exam-ready / interview-grade. <strong>Skill</strong> Mode gets you to the first plateau (a real conversation in French, a played song, a recognisable sketch — not fluency). <strong>Creative</strong> Mode gets you the first stylistic breakthrough (moves start showing up in your work — not a developed voice). <strong>Project</strong> Mode gets you a shipped v1. <strong>Socratic</strong> Mode gets you a defensible position. <strong>Diagnostic</strong> Mode gets you a working pattern library. The brand promise is <em>fastest possible compounding progress per hour</em>, not "mastery" of anything in two days.
       </div>
     </div>
 
@@ -1276,7 +1288,7 @@
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What does the "contrarian source" rule mean?</div>
       <div class="faq-a">
-        Most people upload sources that agree with each other — five textbooks all teaching the same thing. Force yourself to include <strong>one source that disagrees</strong>: a critic, a competing framework, a paper with different conclusions. This is how you avoid building a stack that just confirms what you already believe. There's a dedicated prompt (Prompt G) that exploits this.
+        Most people upload sources that agree with each other — five textbooks all teaching the same thing. Force yourself to include <strong>one source that disagrees</strong>: a critic, a competing framework, a paper with different conclusions. This is how you avoid building a stack that just confirms what you already believe. <em>This rule applies most directly in Exam and Socratic Modes (where Prompt G / So5 directly exploit it). In Skill and Creative Modes the analogue is "one contrasting style or anti-model"; in Project Mode it's "one post-mortem of a similar project that went wrong."</em>
       </div>
     </div>
 
@@ -3594,15 +3606,10 @@ After listing them, tell me: switch Mode in the picker at the top. The page re-r
     body.hidden = !open;
   }
   function initSections() {
-    const isReturning = localStorage.getItem(VISITED_KEY) === '1';
     const saved = getSectionState();
-    // Default: open on first visit, collapsed on revisits — but always honour explicit user choice if saved
-    const firstTimeDefault = isReturning ? false : true;
-    const walkthroughDefault = isReturning ? false : true;
-    applySection('firstTime', saved.firstTime !== undefined ? saved.firstTime : firstTimeDefault);
-    applySection('walkthrough', saved.walkthrough !== undefined ? saved.walkthrough : walkthroughDefault);
-    // Mark as visited (used next time to collapse by default)
-    try { localStorage.setItem(VISITED_KEY, '1'); } catch (e) {}
+    // Both FAQ and Walkthrough collapse by default — but honour user's explicit choice if saved
+    applySection('firstTime', saved.firstTime !== undefined ? saved.firstTime : false);
+    applySection('walkthrough', saved.walkthrough !== undefined ? saved.walkthrough : false);
   }
   // Section toggle clicks
   document.addEventListener('click', (e) => {
