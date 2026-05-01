@@ -622,6 +622,38 @@
     height: 1px;
     background: var(--border);
   }
+  /* Collapsible sections (FAQ, Walkthrough) — default-open on first visit, default-collapsed on revisits */
+  button.section-label {
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0;
+  }
+  button.section-label:hover { color: var(--text); }
+  button.section-label .section-caret {
+    font-size: 11px;
+    transition: transform 0.2s;
+    color: var(--accent);
+    margin-right: 4px;
+  }
+  button.section-label[aria-expanded="false"] .section-caret { transform: rotate(-90deg); }
+  button.section-label .section-hint {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: none;
+    margin-left: 10px;
+    font-style: italic;
+  }
+  button.section-label[aria-expanded="true"] .section-hint { display: none; }
+  .section-content { overflow: hidden; }
+  .section-content[hidden] { display: none; }
 
   /* PHASES */
   .phase {
@@ -1200,7 +1232,10 @@
   </div>
 
   <!-- ============ FAQ ============ -->
-  <div class="section-label">First Time? Read This</div>
+  <button type="button" class="section-label section-toggle" data-section="firstTime" aria-expanded="true">
+    <span class="section-caret">▾</span>First Time? Read This<span class="section-hint">click to expand</span>
+  </button>
+  <div class="section-content" data-section-content="firstTime">
 
   <div id="faqList">
     <div class="faq-item">
@@ -1260,14 +1295,21 @@
     </div>
   </div>
 
+  </div><!-- /section-content firstTime -->
+
   <!-- ============ WALKTHROUGH ============ -->
-  <div class="section-label">See It In Action</div>
+  <button type="button" class="section-label section-toggle" data-section="walkthrough" aria-expanded="true">
+    <span class="section-caret">▾</span>See It In Action<span class="section-hint">click to expand</span>
+  </button>
+  <div class="section-content" data-section-content="walkthrough">
 
   <div class="walkthrough" id="walkthrough"></div>
 
   <div style="text-align:center;margin:6px 0 24px;">
     <button class="action-btn" id="walkthroughCycle" style="font-size:11px;">↻ See another domain example</button>
   </div>
+
+  </div><!-- /section-content walkthrough -->
 
   <!-- ============ PROTOCOL (rendered per Mode) ============ -->
   <div class="section-label">The Protocol</div>
@@ -1364,6 +1406,8 @@
   const SAVED_KEY = 'contextStackPublic_saved_v3';
   const LEGACY_SAVED_KEY = 'contextStackPublic_saved_v2';
   const THEME_KEY = 'contextStackPublic_theme';
+  const VISITED_KEY = 'contextStackPublic_visited';
+  const SECTIONS_KEY = 'contextStackPublic_sections';
   const LEGACY_MVS_KEY = 'contextStackPublic_mvs';
 
   const state = {
@@ -3531,12 +3575,54 @@ After listing them, tell me: switch Mode in the picker at the top. The page re-r
     setTimeout(() => t.classList.remove('show'), 2000);
   }
 
+  // ============================================================
+  // COLLAPSIBLE SECTIONS (FAQ + Walkthrough)
+  // — default-open for first-time visitors, collapsed for returners
+  // ============================================================
+  function getSectionState() {
+    try { return JSON.parse(localStorage.getItem(SECTIONS_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+  function setSectionState(s) {
+    try { localStorage.setItem(SECTIONS_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  function applySection(name, open) {
+    const btn = document.querySelector(`.section-toggle[data-section="${name}"]`);
+    const body = document.querySelector(`.section-content[data-section-content="${name}"]`);
+    if (!btn || !body) return;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    body.hidden = !open;
+  }
+  function initSections() {
+    const isReturning = localStorage.getItem(VISITED_KEY) === '1';
+    const saved = getSectionState();
+    // Default: open on first visit, collapsed on revisits — but always honour explicit user choice if saved
+    const firstTimeDefault = isReturning ? false : true;
+    const walkthroughDefault = isReturning ? false : true;
+    applySection('firstTime', saved.firstTime !== undefined ? saved.firstTime : firstTimeDefault);
+    applySection('walkthrough', saved.walkthrough !== undefined ? saved.walkthrough : walkthroughDefault);
+    // Mark as visited (used next time to collapse by default)
+    try { localStorage.setItem(VISITED_KEY, '1'); } catch (e) {}
+  }
+  // Section toggle clicks
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.section-toggle[data-section]');
+    if (!btn) return;
+    const name = btn.dataset.section;
+    const nowOpen = btn.getAttribute('aria-expanded') !== 'true';
+    applySection(name, nowOpen);
+    const saved = getSectionState();
+    saved[name] = nowOpen;
+    setSectionState(saved);
+  });
+
   // INIT
   loadTheme();
   loadState();
   applyStateToInputs();
   rerenderAll();
   renderSavedStacks();
+  initSections();
 </script>
 </body>
 </html>
