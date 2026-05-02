@@ -975,6 +975,18 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85em;
   }
+  .faq-group-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 18px 0 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .faq-group-label:first-child { padding-top: 4px; }
 
   /* WALKTHROUGH EXAMPLE */
   .walkthrough {
@@ -1059,6 +1071,115 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
+  /* SESSION MODE */
+  .session-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .session-bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .session-toggle-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 5px 14px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border-bright);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .session-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .session-toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  #sessionList { display: none; }
+
+  .session-phase-divider {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 16px 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .session-phase-divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
+  .session-phase-divider:first-child { padding-top: 4px; }
+
+  .session-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-bottom: 5px;
+    transition: opacity 0.2s;
+  }
+  .session-item.done { opacity: 0.35; }
+  .session-item-check {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 3px;
+    cursor: pointer;
+    accent-color: var(--green);
+  }
+  .session-item-body { flex: 1; min-width: 0; }
+  .session-item-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .session-item-title {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 7px;
+    line-height: 1.4;
+  }
+  .session-copy-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    background: var(--surface3);
+    color: var(--muted-bright);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .session-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .session-copy-btn.copied { border-color: var(--green); color: var(--green); }
+  .session-reset {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .session-reset:hover { color: var(--accent); }
+
   /* ANIMATIONS */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(14px); }
@@ -1108,24 +1229,8 @@
     <p class="subtitle">A precision interrogation method for using AI to make the most compounding progress possible on any topic in the next 48 hours. <strong>Pick a Mode, configure once, every prompt adapts.</strong> Designed for serious learners across exam, skill, creative, project, dialogue, and diagnostic learning.</p>
   </div>
 
-  <!-- INTRO STEPS -->
-  <div class="intro-card">
-    <div class="intro-step">
-      <div class="intro-step-num">01 — STACK</div>
-      <div class="intro-step-title">Curate your sources</div>
-      <div class="intro-step-desc">Upload focused materials to NotebookLM or Claude. Quality over volume.</div>
-    </div>
-    <div class="intro-step">
-      <div class="intro-step-num">02 — INTERROGATE</div>
-      <div class="intro-step-title">Run the prompts</div>
-      <div class="intro-step-desc">Prompts that surface frameworks, debates, traps, and depth questions.</div>
-    </div>
-    <div class="intro-step">
-      <div class="intro-step-num">03 — RECALL</div>
-      <div class="intro-step-title">Get examined, not taught</div>
-      <div class="intro-step-desc">AI switches to examiner mode. You answer first, then get graded.</div>
-    </div>
-  </div>
+  <!-- INTRO STEPS — rendered per Mode -->
+  <div class="intro-card" id="introCard"></div>
 
   <!-- MODE PICKER -->
   <div class="mode-row">
@@ -1146,7 +1251,7 @@
       </div>
     </div>
     <div class="what48h-col">
-      <div class="what48h-label">What 48h means in this Mode</div>
+      <div class="what48h-label" id="what48hLabel">What 48h means in this Mode</div>
       <div class="what48h-text" id="what48hText">Exam-ready or interview-grade declarative mastery. Matches what the MIT Challenge / cram literature actually proves.</div>
     </div>
   </div>
@@ -1185,7 +1290,7 @@
       <!-- ROLE + AUDIENCE -->
       <div class="config-grid">
         <div class="config-row">
-          <label>The AI plays the role of <span class="help">who teaches you</span></label>
+          <label id="roleLabelEl">The AI plays the role of <span class="help">who teaches you</span></label>
           <input type="text" class="input-text" id="roleInput" placeholder="e.g., staff engineer  ·  CFA charterholder  ·  history professor">
         </div>
         <div class="config-row">
@@ -1238,6 +1343,9 @@
   <div class="section-content" data-section-content="firstTime">
 
   <div id="faqList">
+
+    <div class="faq-group-label">What this is</div>
+
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What is "context stacking"?</div>
       <div class="faq-a">
@@ -1253,21 +1361,32 @@
     </div>
 
     <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do I really need 48 hours?</div>
-      <div class="faq-a">
-        No. "48 hours" means <em>48 hours of deliberate work</em>, spread however you want — two weekends, four evenings, whatever. Use the <strong>Time Track</strong> control near the top to scale: <strong>Crash · 4–6h</strong> for essentials only, <strong>Sprint · 12h</strong> for half a weekend, <strong>Standard · 48h</strong> for the full protocol, <strong>Block · 2 weeks</strong> for skills/creative/projects, <strong>Sustained · 60d+</strong> for languages and deep domains.
-      </div>
-    </div>
-    <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What's a Mode and how do I pick one?</div>
       <div class="faq-a">
         A Mode is the <em>shape</em> of your topic. Different topics need different protocols — exam-style PASS/FAIL is right for declarative knowledge but hostile to creative or skill learning. <strong>Exam</strong> for professional exams and interviews. <strong>Skill</strong> for languages, instruments, sport, drawing. <strong>Creative</strong> for writing, design, composition. <strong>Project</strong> for "ship a real artifact." <strong>Socratic</strong> for humanities, philosophy, history. <strong>Diagnostic</strong> for medicine and triage. Not sure? Use <strong>Explore</strong> first — it spends ~90 minutes helping you pick a topic and the right Mode for it.
       </div>
     </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What if I don't know what I want to learn?</div>
+      <div class="faq-a">
+        Use <strong>Explore Mode</strong> — it's the pre-Mode for undecided learners. In ~90 minutes it runs you through a curiosity scan (what's been pulling your attention?), a taste mapping (what do your favourite learning experiences have in common?), and a smallest-real-thing test (what could you try in 90 minutes to know if a topic is worth 48h?). At the end you get a specific topic, a recommended Mode, a Time Track, and a filled-in configuration ready to run. Switch to that Mode and go.
+      </div>
+    </div>
+
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Will I really master something in 48 hours?</div>
       <div class="faq-a">
         Depends what you mean by "master" — and that depends on the Mode. <strong>Exam</strong> Mode in 48h gets you exam-ready / interview-grade. <strong>Skill</strong> Mode gets you to the first plateau (a real conversation in French, a played song, a recognisable sketch — not fluency). <strong>Creative</strong> Mode gets you the first stylistic breakthrough (moves start showing up in your work — not a developed voice). <strong>Project</strong> Mode gets you a shipped v1. <strong>Socratic</strong> Mode gets you a defensible position. <strong>Diagnostic</strong> Mode gets you a working pattern library. The brand promise is <em>fastest possible compounding progress per hour</em>, not "mastery" of anything in two days.
+      </div>
+    </div>
+
+    <div class="faq-group-label">How to use it</div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do I really need 48 hours?</div>
+      <div class="faq-a">
+        No. "48 hours" means <em>48 hours of deliberate work</em>, spread however you want — two weekends, four evenings, whatever. Use the <strong>Time Track</strong> control near the top to scale: <strong>Crash · 4–6h</strong> for essentials only, <strong>Sprint · 12h</strong> for half a weekend, <strong>Standard · 48h</strong> for the full protocol, <strong>Block · 2 weeks</strong> for skills/creative/projects, <strong>Sustained · 60d+</strong> for languages and deep domains.
       </div>
     </div>
 
@@ -1293,18 +1412,21 @@
     </div>
 
     <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can I save and reuse a stack across sessions?</div>
+      <div class="faq-a">
+        Yes. Click <strong>+ Save Stack</strong> in the Configure panel — your stack (Mode, Track, topic, role, audience, depth, goal, context) is saved in your browser's <code>localStorage</code>, no account needed. To share a stack with someone else or resume on another device, use <strong>⎘ Share via URL</strong> — it encodes your full configuration into a link you can copy and send. Paste it into any browser and the stack loads automatically.
+      </div>
+    </div>
+
+    <div class="faq-group-label">Privacy &amp; technical</div>
+
+    <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is my data sent anywhere?</div>
       <div class="faq-a">
         No. This page runs entirely in your browser. No accounts, no tracking, no server. Your saved stacks, topic, and context stay in <code>localStorage</code> on your device only. The <em>only</em> data that leaves your computer is what you copy and paste into your chosen AI tool — and that goes to <em>them</em>, not us.
       </div>
     </div>
 
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Who built this?</div>
-      <div class="faq-a">
-        Built by <a href="https://github.com/bluebud123" target="_blank" rel="noopener" style="color:var(--accent);">bluebud123</a>. Free to use, free to fork. Feedback and PRs welcome on GitHub.
-      </div>
-    </div>
   </div>
 
   </div><!-- /section-content firstTime -->
@@ -1324,76 +1446,22 @@
   </div><!-- /section-content walkthrough -->
 
   <!-- ============ PROTOCOL (rendered per Mode) ============ -->
-  <div class="section-label">The Protocol</div>
-
-  <div id="protocolContainer"></div>
-
-
-
-  <!-- ============ TRAPS ============ -->
-  <div class="section-label">What NOT To Do</div>
-
-  <div class="phase">
-    <div class="phase-header" onclick="togglePhase(this)">
-      <div class="phase-num">⚠ TRAPS</div>
-      <div class="phase-title">Common Failures of This Method</div>
-      <div class="phase-time">Read once</div>
-      <div class="phase-toggle">▼</div>
-    </div>
-    <div class="phase-body">
-      <ul class="steps">
-        <li>
-          <div class="step-num">01</div>
-          <div class="step-content">
-            <h4>Skipping "write your own answer first"</h4>
-            <p>Reading the AI's answer before formulating yours creates fluency illusion — feeling like you understand because the answer made sense. Real recall only forms when you struggle first.</p>
-          </div>
-        </li>
-        <li>
-          <div class="step-num">02</div>
-          <div class="step-content">
-            <h4>Dumping too many sources</h4>
-            <p>The temptation to upload everything dilutes AI focus. One primary, 2–3 supporting, 2–3 papers, your notes, one contrarian source. That's the optimal stack.</p>
-          </div>
-        </li>
-        <li>
-          <div class="step-num">03</div>
-          <div class="step-content">
-            <h4>Asking for summaries</h4>
-            <p>"Summarise this" is the lowest-value use of AI and what most people do. The point is to surface frameworks, debates, and traps — things sources don't teach explicitly.</p>
-          </div>
-        </li>
-        <li>
-          <div class="step-num">04</div>
-          <div class="step-content">
-            <h4>Trusting AI on context-specific practice</h4>
-            <p>The AI knows international literature well but not always: local exam style, your specific examiners, recent industry shifts, or your company's internal practices. Cross-check with humans who know the actual context.</p>
-          </div>
-        </li>
-        <li>
-          <div class="step-num">05</div>
-          <div class="step-content">
-            <h4>Doing 48 hours straight</h4>
-            <p>"48 hours" is a frame, not a marathon. Split as 8+10 hr days × 2, or 4 × 12-hour days. Sleep is when memory consolidates — skipping it negates the work.</p>
-          </div>
-        </li>
-        <li>
-          <div class="step-num">06</div>
-          <div class="step-content">
-            <h4>Confusing this with research</h4>
-            <p>This method is for <em>understanding what's already known</em>, not discovering new things. For genuine research where the answer doesn't exist yet, this won't help — that's a different mode.</p>
-          </div>
-        </li>
-        <li>
-          <div class="step-num">07</div>
-          <div class="step-content">
-            <h4>Forcing skill or creative learning into Examiner Mode</h4>
-            <p>PASS / BORDERLINE / FAIL is right for declarative knowledge under pressure. It's hostile to skill, creative, dialogue, and project learning. Pick the Mode that matches the *shape* of your topic — that's why Mode exists.</p>
-          </div>
-        </li>
-      </ul>
+  <div class="session-bar">
+    <div class="section-label" style="margin:0;">The Protocol</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="session-reset" id="sessionResetBtn" style="display:none;" onclick="resetSessionChecks()">↺ Reset checks</button>
+      <button class="session-toggle-btn" id="sessionToggleBtn" onclick="toggleSessionMode()">⚡ Session Mode</button>
     </div>
   </div>
+
+  <div id="protocolContainer"></div>
+  <div id="sessionList"></div>
+
+
+
+  <!-- ============ TRAPS — rendered per Mode ============ -->
+  <div class="section-label">What NOT To Do</div>
+  <div id="trapsContainer"></div>
 
   <hr class="divider">
 
@@ -1442,6 +1510,158 @@
     standard:  { label: 'Standard · 48h',  summary: '48 hours of deliberate work, the full protocol' },
     block:     { label: 'Block · 2wk',     summary: '~30–40h spread across two weeks of evenings' },
     sustained: { label: 'Sustained · 60d+', summary: '60+ days with weekly checkpoints — for skills, languages, deep domains' }
+  };
+
+  // ============================================================
+  // INTRO STEPS — per Mode (3 steps each)
+  // ============================================================
+  const MODE_INTRO_STEPS = {
+    explore: [
+      { num: '01 — SCAN',   title: 'Name what\'s pulling you',    desc: 'List 5–10 things that caught your attention recently. Don\'t filter — just list.' },
+      { num: '02 — SHAPE',  title: 'Find the topic underneath',   desc: 'Cluster by the question underneath each item. Which grouping has the most energy?' },
+      { num: '03 — COMMIT', title: 'Pick a Mode and go',          desc: 'In ~90 min you\'ll have a topic, a Mode, a Track, and a configuration ready to run.' }
+    ],
+    exam: [
+      { num: '01 — STACK',       title: 'Curate your sources',       desc: 'Upload your textbook, papers, notes, and one contrarian source to NotebookLM or Claude.' },
+      { num: '02 — INTERROGATE', title: 'Run the prompts',           desc: 'Surface frameworks, expert disagreements, traps, and depth questions you\'d never think to ask.' },
+      { num: '03 — EXAMINE',     title: 'Get graded, not taught',    desc: 'AI becomes your examiner. You write your answer first — then get PASS / BORDERLINE / FAIL.' }
+    ],
+    skill: [
+      { num: '01 — STACK', title: 'Gather your exemplars',      desc: 'One master recording, a breakdown, a teacher source, your own attempts, and one contrasting style.' },
+      { num: '02 — DRILL', title: 'Build the reps loop',        desc: 'Decompose into micro-drills. Each has a success criterion and a failure mode.' },
+      { num: '03 — COACH', title: 'Get corrected, not praised', desc: 'Share your rep. AI gives one correction: "do X instead of Y." Repeat until it lands.' }
+    ],
+    creative: [
+      { num: '01 — STACK',    title: 'Find your exemplars',           desc: 'Canonical works to imitate, a craft reference, an anti-model, your own drafts, and a cross-tradition piece.' },
+      { num: '02 — IMITATE',  title: 'Run the imitation cycle',       desc: 'Study the move. Copy it with a different subject. Internalise what makes it work.' },
+      { num: '03 — CRITIQUE', title: 'Get critiqued, not encouraged', desc: 'Share your draft. AI returns three columns: Working · Pretending · Cut It. No grades.' }
+    ],
+    project: [
+      { num: '01 — SPEC',  title: 'Write the spec first',          desc: 'Scope, success criteria, out-of-scope, a reference implementation, and a post-mortem.' },
+      { num: '02 — BUILD', title: 'Spike then milestone',          desc: 'Prove the riskiest assumption in 2 hours. Then build in milestones of ≤4h each.' },
+      { num: '03 — DEMO',  title: 'Get questioned, not validated', desc: 'At v0.5 and v1: 5 sharpest reviewer questions. Verdict on reasoning: Reasonable / Risky / Wrong.' }
+    ],
+    socratic: [
+      { num: '01 — STACK',  title: 'Gather the texts',        desc: '2 primary texts, a commentary, a genuine critic of the tradition, your marginalia, and an opposing school.' },
+      { num: '02 — MAP',    title: 'Find the live problems',  desc: 'Where do the thinkers actually disagree vs. just use different words? Surface the hardest open questions.' },
+      { num: '03 — COMMIT', title: 'Get pressed, not graded', desc: 'Commit a position in writing. AI responds: Sharper · Same · Slipped — then presses one level deeper.' }
+    ],
+    diagnostic: [
+      { num: '01 — STACK',  title: 'Assemble your cases',              desc: '5–10 cases, a canonical reference, an atlas of atypical presentations, and a cognitive-error source.' },
+      { num: '02 — COMMIT', title: 'Differential before investigation', desc: 'AI presents observables only. You commit a top-3 differential before any investigation results.' },
+      { num: '03 — ROUNDS', title: 'Get your reasoning graded',        desc: 'Case revealed. Verdict: Reasonable / Risky / Wrong — on the reasoning trace, not the final answer.' }
+    ]
+  };
+
+  // ============================================================
+  // CONFIG PLACEHOLDERS — per Mode
+  // ============================================================
+  const MODE_CONFIG_PLACEHOLDERS = {
+    explore: {
+      topic:     'leave blank — Explore Mode helps you pick',
+      role:      'leave blank — will be set once you choose a topic',
+      audience:  'leave blank — will be set once you choose a topic',
+      roleLabel: 'The AI explores with you as',
+      roleHint:  'who helps you pick a topic'
+    },
+    exam: {
+      topic:     'e.g., Kubernetes operator pattern  ·  CFA Level 2 fixed income  ·  Roman Republic collapse',
+      role:      'e.g., staff engineer  ·  CFA charterholder  ·  history professor',
+      audience:  'e.g., a job interview  ·  passing the Level 2 exam  ·  writing a Substack post',
+      roleLabel: 'The AI plays the role of',
+      roleHint:  'who examines you'
+    },
+    skill: {
+      topic:     'e.g., conversational French to B2  ·  jazz guitar comping  ·  figure drawing fundamentals',
+      role:      'e.g., fluent native French speaker who teaches advanced learners  ·  working jazz guitarist  ·  life drawing instructor',
+      audience:  'e.g., a 30-min café conversation  ·  sitting in on a jam session  ·  a weekly life drawing class',
+      roleLabel: 'The AI coaches as',
+      roleHint:  'who corrects your reps'
+    },
+    creative: {
+      topic:     'e.g., literary short fiction  ·  UX writing voice and tone  ·  oil painting light and shadow',
+      role:      'e.g., senior literary editor  ·  principal UX writer  ·  figurative oil painter',
+      audience:  'e.g., a portfolio review  ·  a design critique  ·  a group exhibition',
+      roleLabel: 'The AI critiques as',
+      roleHint:  'who reviews your drafts'
+    },
+    project: {
+      topic:     'e.g., Postgres extension in Go  ·  internal Slack bot  ·  CLI tool for time tracking',
+      role:      'e.g., senior backend engineer  ·  staff platform engineer  ·  principal engineer',
+      audience:  'e.g., a working v1 shipped this weekend  ·  a demo to the team on Friday',
+      roleLabel: 'The AI pairs with you as',
+      roleHint:  'who questions your reasoning'
+    },
+    socratic: {
+      topic:     'e.g., Stoicism vs. Epicureanism  ·  originalism in constitutional law  ·  free will and moral responsibility',
+      role:      'e.g., professor of Hellenistic philosophy  ·  constitutional law scholar  ·  philosopher of mind',
+      audience:  'e.g., a seminar discussion  ·  a written position paper  ·  holding a defensible view',
+      roleLabel: 'The AI dialogues as',
+      roleHint:  'who presses your position'
+    },
+    diagnostic: {
+      topic:     'e.g., shortness of breath DDx in primary care  ·  network latency triage  ·  P&L variance forensics',
+      role:      'e.g., attending physician  ·  senior SRE  ·  senior finance analyst',
+      audience:  'e.g., sharper presentations on ward rounds  ·  faster incident triage  ·  better variance explanations',
+      roleLabel: 'The AI attends as',
+      roleHint:  'who runs case rounds with you'
+    }
+  };
+
+  // ============================================================
+  // TRAPS — per Mode
+  // ============================================================
+  const MODE_TRAPS = {
+    explore: [
+      { num: '01', title: 'Using Explore as an indefinite planning session', text: 'Explore Mode runs for ~90 minutes and hands off to a real Mode. If you\'re still picking a topic after two rounds of E1–E3, flip a coin and commit. The work tells you more than any planning session.' },
+      { num: '02', title: 'Trying to run multiple topics in parallel',        text: 'The protocol works through depth, not breadth. One topic at a time. If you genuinely can\'t choose between two, the small 90-minute try (E3) is the answer — not more planning.' },
+      { num: '03', title: 'Confusing "interesting" with "worth 48h"',         text: 'Lots of things are interesting for 10 minutes. The E3 question — "what\'s the smallest real thing I can try in 90 minutes?" — is the test. Interest survives doing; curiosity usually doesn\'t.' },
+      { num: '04', title: 'Waiting until you know enough to commit',          text: '48h of focused work on the "wrong" topic still compounds. You learn things that transfer. The only wrong choice is not committing.' }
+    ],
+    exam: [
+      { num: '01', title: 'Skipping "write your own answer first"',   text: 'Reading the AI\'s answer before formulating yours creates fluency illusion — feeling like you understand because the answer made sense. Real recall only forms when you struggle first.' },
+      { num: '02', title: 'Dumping too many sources',                  text: 'The temptation to upload everything dilutes AI focus. One primary, 2–3 supporting, 2–3 papers, your notes, one contrarian source. That\'s the optimal stack.' },
+      { num: '03', title: 'Asking for summaries',                      text: '"Summarise this" is the lowest-value use of AI. The point is to surface frameworks, debates, and traps — things sources don\'t teach explicitly.' },
+      { num: '04', title: 'Trusting AI on context-specific practice',  text: 'The AI knows international literature well but not always: local exam style, your specific examiners, recent industry shifts, or your company\'s internal practices. Cross-check with humans who know the actual context.' },
+      { num: '05', title: 'Doing 48 hours straight',                   text: '"48 hours" is a frame, not a marathon. Split as 8+10h days × 2, or 4 × 12-hour days. Sleep is when memory consolidates — skipping it negates the work.' },
+      { num: '06', title: 'Confusing this with research',              text: 'This method is for understanding what\'s already known, not discovering new things. For genuine research where the answer doesn\'t exist yet, this won\'t help.' },
+      { num: '07', title: 'Skipping the contrarian source',            text: 'Most people upload five sources that agree with each other. The contrarian source is what makes Prompt G sharp. Without it, you build a stack that just confirms what you already believe.' }
+    ],
+    skill: [
+      { num: '01', title: 'Skipping "perform the rep before reading feedback"', text: 'The correction only locks in if you generate your own attempt first. Reading feedback without attempting the rep is reading about swimming — you\'re not in the water.' },
+      { num: '02', title: 'Asking for theory instead of drills',                text: '"Why does this chord progression work?" is not a practice session. The answer won\'t help until after 5 reps of the progression. Theory follows reps — it doesn\'t replace them.' },
+      { num: '03', title: 'Running the same broken drill for weeks',            text: 'If a drill stops producing improvement, that\'s a plateau — not a reason to keep going. Run the plateau diagnostic (S5). The fix is almost always a different drill targeting the same micro-skill from a new angle.' },
+      { num: '04', title: 'Skipping the recording',                            text: 'AI can\'t coach reps it can\'t see. Send a description of what you did, what felt wrong, where the rep broke down. Your own mental model of your rep is almost always wrong — that\'s exactly the problem.' },
+      { num: '05', title: 'Doing 48 hours straight',                           text: 'Deliberate practice works in 20–45 minute focused blocks with full recovery between. More than 2 hours of genuine deliberate practice per day produces diminishing returns. Block track spreads the work correctly.' }
+    ],
+    creative: [
+      { num: '01', title: 'Asking "is this good?" instead of sharing the draft', text: '"Is this good?" invites encouragement. The protocol returns Working / Pretending / Cut It — which is what actually improves the work. Don\'t summarise the draft. Share it.' },
+      { num: '02', title: 'Reading about craft instead of imitating',           text: 'Craft theory without reps is still theory. The protocol works because you make something, then critique it. Reading about the form is preparation; it is not the practice.' },
+      { num: '03', title: 'Uploading only work you love',                       text: 'The anti-model — work in your genre that fails in a specific, nameable way — is where you learn failure modes. If you can\'t name why it fails, you don\'t yet know what to avoid.' },
+      { num: '04', title: 'Asking AI to rewrite your draft',                    text: 'AI can name what isn\'t working and why. The rewrite is yours. A draft AI wrote is not your voice — it\'s a fluency illusion in another register.' },
+      { num: '05', title: 'Treating "Working" as a passing grade',             text: '"Working" means one specific move is doing something. It\'s not a verdict on the piece overall. A draft with 3 Working entries can still have 6 things that need to go.' }
+    ],
+    project: [
+      { num: '01', title: 'Building without a spec',                          text: 'A 15-minute spec prevents 4 hours of rework. Scope, success criteria, out-of-scope, simplest v0. If you can\'t write the success criterion, you don\'t know what you\'re building.' },
+      { num: '02', title: 'Skipping the spike',                               text: 'The spike proves the riskiest assumption in 2 hours before you build on it. Building directly to v1 without a spike means discovering the broken assumption at hour 10, not hour 2.' },
+      { num: '03', title: 'Asking AI to implement instead of to question',    text: '"Write the code for X" skips the protocol. "Here\'s my approach — what\'s the one thing you\'d question?" is Pair Practitioner Mode. The reasoning matters more than the implementation.' },
+      { num: '04', title: 'Treating a correct outcome as a Reasonable verdict', text: 'Reasonable / Risky / Wrong grades the reasoning trace, not the answer. Getting lucky with broken reasoning is Risky. That reasoning, applied to the next problem, will fail you.' },
+      { num: '05', title: 'Skipping the retrospective',                       text: 'The retro (P5) is where the learning from one build compounds into the next. The hidden complexity you underestimated and the decision you\'d change are the most valuable outputs of the sprint.' }
+    ],
+    socratic: [
+      { num: '01', title: 'Looking for the right answer',                          text: 'Socratic Mode develops a position — it doesn\'t find the correct one. If you\'re trying to get AI to confirm the right view, you\'re in the wrong mode. The goal is a defensible position, not certainty.' },
+      { num: '02', title: 'Asking AI for its view before committing yours',        text: 'Commit your position first, every time. AI\'s view before yours shapes your thinking before you\'ve had a chance to form it. That\'s the opposite of the protocol.' },
+      { num: '03', title: 'Uploading only sources that agree with each other',    text: 'The critic of the tradition and the text from the opposing school are not optional. Without them, the dialogue is circular — you\'re pressing against your own echo.' },
+      { num: '04', title: 'Exploring all angles before committing',               text: '"I need to read more before I can commit a position" is the stall. Commit a bad position and press it. A refined bad position is more useful than a deferred good one.' },
+      { num: '05', title: '"Slipped" is not a failing grade',                     text: 'Slipped means the move weakened or contradicted your position. It\'s information, not a verdict. Revise the move and continue. The only failure in Dialogue Mode is refusing to commit.' }
+    ],
+    diagnostic: [
+      { num: '01', title: 'Committing your diagnosis after seeing investigation results', text: 'The protocol requires commitment before investigation. A differential formed after you already know the answer is post-hoc rationalisation — exactly the cognitive error you\'re training against.' },
+      { num: '02', title: 'Treating a correct answer as a Reasonable verdict',           text: 'Case Rounds grades the reasoning trace. A correct call with anchored reasoning earns Risky — that reasoning, on the next atypical presentation, will fail you.' },
+      { num: '03', title: 'Running cases without a case log',                            text: 'The pattern library (D4) can only form if you log your reasoning on each case. Without a log, you\'re running cases without compounding. The patterns repeat; you just can\'t see them.' },
+      { num: '04', title: 'Studying theory between cases instead of running more cases', text: 'Cognitive error correction comes from cases, not textbooks. If D4 reveals an anchoring pattern, the fix is a different class of cases — not re-reading the relevant chapter.' },
+      { num: '05', title: 'Staying in the comfortable presentation range',              text: 'If all your cases are typical presentations at your comfort level, you\'re training recognition, not robustness. Deliberately include atypical presentations (D5) and cases one level above your depth.' }
+    ]
   };
 
   // ============================================================
@@ -1529,10 +1749,10 @@
         steps: [
           { num: 'A', title: 'Expert Disagreements', desc: 'Where do real practitioners actually disagree?', prompt: { key: 'a', label: 'Prompt A' }},
           { num: 'B', title: 'Common Mistakes / Traps', desc: 'What do people at my level get wrong?', prompt: { key: 'b', label: 'Prompt B' }},
-          { num: 'C', title: 'Frameworks &amp; Models', desc: 'What are the structured ways experts think about this?', prompt: { key: 'c', label: 'Prompt C' }},
+          { num: 'C', title: 'Frameworks & Models', desc: 'What are the structured ways experts think about this?', prompt: { key: 'c', label: 'Prompt C' }},
           { num: 'D', title: 'The "So What" Test', desc: 'The questions that separate surface knowledge from understanding.', prompt: { key: 'd', label: 'Prompt D' }},
           { num: 'E', title: 'Practitioner-Level Depth', desc: 'What separates someone who has done it from someone who has only read about it?', prompt: { key: 'e', label: 'Prompt E' }},
-          { num: 'F', title: 'Evidence &amp; Sources', desc: 'The canonical references and what they actually say.', prompt: { key: 'f', label: 'Prompt F' }},
+          { num: 'F', title: 'Evidence & Sources', desc: 'The canonical references and what they actually say.', prompt: { key: 'f', label: 'Prompt F' }},
           { num: 'G', title: 'Steel-Man the Contrarian', desc: 'Use the disagreeing source you uploaded — extract its strongest argument.', prompt: { key: 'g', label: 'Prompt G' }}
         ]},
       { id: 'p3', num: 'PHASE 3', title: 'Stress Test — Active Recall', time: 'Hour 20–36', tracks: ['crash','sprint','standard','block','sustained'], type: 'steps',
@@ -3129,12 +3349,34 @@ After listing them, tell me: switch Mode in the picker at the top. The page re-r
     }).join('');
   }
 
+  function getWhat48hText() {
+    const m = activeMode();
+    if (state.track === 'standard') return m.what48h;
+    const msgs = {
+      crash:    `4–6 hours — essentials only. The Crash phases cover the core frameworks and most critical concepts for ${m.label} Mode. Not the full protocol.`,
+      sprint:   `~12 hours — Phase 0 through Phase 2, plus a first pass of Phase 3. Enough for a solid foundation in ${m.label} Mode.`,
+      block:    `2 weeks of evenings (~30–40h) — the right cadence for ${m.label} Mode, where daily practice compounds. Each session builds on the last.`,
+      sustained:`60+ days with weekly checkpoints — for ${m.label} Mode topics where the skill or knowledge takes months to surface.`
+    };
+    return msgs[state.track] || m.what48h;
+  }
+
+  const TRACK_LABELS = {
+    crash:    'What Crash · 4–6h delivers',
+    sprint:   'What Sprint · 12h delivers',
+    standard: 'What 48h means in this Mode',
+    block:    'What Block · 2wk delivers',
+    sustained:'What Sustained · 60d+ delivers'
+  };
+
   function renderTrackSeg() {
     document.querySelectorAll('#trackSeg .seg-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.val === state.track);
     });
     const w = document.getElementById('what48hText');
-    if (w) w.textContent = activeMode().what48h;
+    if (w) w.textContent = getWhat48hText();
+    const lbl = document.getElementById('what48hLabel');
+    if (lbl) lbl.textContent = TRACK_LABELS[state.track] || TRACK_LABELS.standard;
   }
 
   function renderPresets() {
@@ -3172,16 +3414,66 @@ After listing them, tell me: switch Mode in the picker at the top. The page re-r
     }).join('');
   }
 
+  function renderIntroCard() {
+    const wrap = document.getElementById('introCard');
+    if (!wrap) return;
+    const steps = MODE_INTRO_STEPS[state.mode] || MODE_INTRO_STEPS.exam;
+    wrap.innerHTML = steps.map(s =>
+      `<div class="intro-step">
+        <div class="intro-step-num">${escapeHtml(s.num)}</div>
+        <div class="intro-step-title">${escapeHtml(s.title)}</div>
+        <div class="intro-step-desc">${escapeHtml(s.desc)}</div>
+      </div>`
+    ).join('');
+  }
+
+  function renderConfigPlaceholders() {
+    const ph = MODE_CONFIG_PLACEHOLDERS[state.mode] || MODE_CONFIG_PLACEHOLDERS.exam;
+    const t = document.getElementById('topicInput');
+    const r = document.getElementById('roleInput');
+    const a = document.getElementById('audienceInput');
+    if (t) t.placeholder = ph.topic;
+    if (r) r.placeholder = ph.role;
+    if (a) a.placeholder = ph.audience;
+    const lbl = document.getElementById('roleLabelEl');
+    if (lbl) lbl.innerHTML = `${escapeHtml(ph.roleLabel)} <span class="help">${escapeHtml(ph.roleHint)}</span>`;
+  }
+
+  function renderTraps() {
+    const container = document.getElementById('trapsContainer');
+    if (!container) return;
+    const traps = MODE_TRAPS[state.mode] || MODE_TRAPS.exam;
+    container.innerHTML = `<div class="phase open">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num">⚠ TRAPS</div>
+        <div class="phase-title">Common Failures of This Method</div>
+        <div class="phase-time">Read once</div>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-body">
+        <ul class="steps">
+          ${traps.map(t => `<li>
+            <div class="step-num">${escapeHtml(t.num)}</div>
+            <div class="step-content">
+              <h4>${escapeHtml(t.title)}</h4>
+              <p>${escapeHtml(t.text)}</p>
+            </div>
+          </li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+  }
+
   // Active walkthrough index — for the cycle button
   let walkthroughIdx = 0;
   function renderWalkthrough() {
     const wrap = document.getElementById('walkthrough');
     if (!wrap) return;
-    // Build an array: active mode's walkthrough first, then the others in order
+    // Active mode's walkthrough first, then 2 alternates — cap at 3 total
     const order = ['exam','skill','creative','project','socratic','diagnostic','explore'];
-    const seq = [activeMode().walkthrough].concat(
-      order.filter(k => k !== state.mode).map(k => MODES[k] && MODES[k].walkthrough).filter(Boolean)
-    );
+    const others = order.filter(k => k !== state.mode)
+      .map(k => MODES[k] && MODES[k].walkthrough).filter(Boolean);
+    const seq = [activeMode().walkthrough, others[0], others[1]].filter(Boolean);
     const w = seq[walkthroughIdx % seq.length];
     if (!w) { wrap.innerHTML = ''; return; }
     const stepsHtml = (w.steps || []).map(s =>
@@ -3297,6 +3589,10 @@ After listing them, tell me: switch Mode in the picker at the top. The page re-r
     renderGoalSeg();
     renderProtocol();
     renderWalkthrough();
+    renderIntroCard();
+    renderConfigPlaceholders();
+    renderTraps();
+    if (sessionMode) renderSessionList();
     render(flash);
     applyTrack();
   }
@@ -3571,6 +3867,111 @@ After listing them, tell me: switch Mode in the picker at the top. The page re-r
   document.getElementById('roleInput').addEventListener('input', e => { state.role = e.target.value; render(); });
   document.getElementById('audienceInput').addEventListener('input', e => { state.audience = e.target.value; render(); });
   document.getElementById('contextInput').addEventListener('input', e => { state.context = e.target.value; render(); });
+
+  // ============================================================
+  // SESSION MODE
+  // ============================================================
+  let sessionMode = false;
+
+  function getSessionChecks() {
+    try { return JSON.parse(localStorage.getItem('contextStackPublic_checks') || '{}'); }
+    catch(e) { return {}; }
+  }
+  function setSessionCheck(key, val) {
+    const checks = getSessionChecks();
+    if (val) checks[key] = true; else delete checks[key];
+    try { localStorage.setItem('contextStackPublic_checks', JSON.stringify(checks)); } catch(e) {}
+  }
+  function resetSessionChecks() {
+    try { localStorage.removeItem('contextStackPublic_checks'); } catch(e) {}
+    renderSessionList();
+  }
+
+  function renderSessionList() {
+    const container = document.getElementById('sessionList');
+    if (!container) return;
+    const m = activeMode();
+    const phases = (m.phases || []).filter(p => trackIncludesPhase(state.track, p));
+    const tpls = m.templates || {};
+    const checks = getSessionChecks();
+    let html = '';
+
+    phases.forEach(phase => {
+      if (phase.type === 'audio') return;
+      html += `<div class="session-phase-divider">${escapeHtml(phase.num)} · ${escapeHtml(phase.title)}</div>`;
+
+      if (phase.type === 'checklist') {
+        const key = `${state.mode}_${phase.id}_setup`;
+        const done = !!checks[key];
+        html += `<div class="session-item${done ? ' done' : ''}">
+          <input type="checkbox" class="session-item-check" ${done ? 'checked' : ''}
+            onchange="setSessionCheck('${escapeHtml(key)}', this.checked); this.closest('.session-item').classList.toggle('done', this.checked)">
+          <div class="session-item-body">
+            <div class="session-item-title">Upload sources to NotebookLM</div>
+            <div style="font-size:11px;color:var(--muted);">See source checklist in full view</div>
+          </div>
+        </div>`;
+      } else if (phase.type === 'steps') {
+        (phase.steps || []).forEach(step => {
+          if (!step.prompt) return;
+          const key = `${state.mode}_${phase.id}_${step.prompt.key}`;
+          const done = !!checks[key];
+          const tpl = tpls[step.prompt.key];
+          const copyText = tpl ? fillTemplate(tpl) : '';
+          html += `<div class="session-item${done ? ' done' : ''}">
+            <input type="checkbox" class="session-item-check" ${done ? 'checked' : ''}
+              onchange="setSessionCheck('${escapeHtml(key)}', this.checked); this.closest('.session-item').classList.toggle('done', this.checked)">
+            <div class="session-item-body">
+              <div class="session-item-label">${escapeHtml(step.prompt.label)}</div>
+              <div class="session-item-title">${escapeHtml(step.title)}</div>
+              <div class="session-item-actions">
+                ${copyText
+                  ? `<button class="session-copy-btn" data-copy-text="${escapeHtml(copyText).replace(/"/g,'&quot;')}">Copy prompt</button>`
+                  : `<span style="font-size:11px;color:var(--muted);">No prompt for this Mode</span>`}
+              </div>
+            </div>
+          </div>`;
+        });
+      }
+    });
+
+    container.innerHTML = html || '<p style="color:var(--muted);font-size:0.9rem;padding:12px 0;">No prompts for this Mode/Track combination.</p>';
+  }
+
+  function toggleSessionMode() {
+    sessionMode = !sessionMode;
+    const btn = document.getElementById('sessionToggleBtn');
+    const resetBtn = document.getElementById('sessionResetBtn');
+    const protocol = document.getElementById('protocolContainer');
+    const session = document.getElementById('sessionList');
+    if (sessionMode) {
+      protocol.style.display = 'none';
+      session.style.display = 'block';
+      if (btn) { btn.textContent = '← Full View'; btn.classList.add('active'); }
+      if (resetBtn) resetBtn.style.display = '';
+      renderSessionList();
+    } else {
+      protocol.style.display = '';
+      session.style.display = 'none';
+      if (btn) { btn.textContent = '⚡ Session Mode'; btn.classList.remove('active'); }
+      if (resetBtn) resetBtn.style.display = 'none';
+    }
+  }
+
+  // Session copy button clicks
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.session-copy-btn[data-copy-text]');
+    if (!btn) return;
+    if (!state.topic.trim()) { showToast('Add a topic first'); return; }
+    const text = btn.dataset.copyText;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      showToast('Copied — paste into NotebookLM');
+      setTimeout(() => { btn.textContent = 'Copy prompt'; btn.classList.remove('copied'); }, 2000);
+    } catch { btn.textContent = 'Error'; }
+  });
 
   function toggleConfig(e) {
     e.stopPropagation();
